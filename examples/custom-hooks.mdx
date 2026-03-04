@@ -1,0 +1,614 @@
+---
+title: Custom Hooks
+description: Build custom Bible applications using YouVersion Platform hooks
+---
+
+The YouVersion Platform React SDK provides powerful hooks that let you build custom Bible applications. These hooks handle data fetching, caching, and state management while giving you complete control over the UI.
+
+## Core Hooks Overview
+
+All data hooks follow a consistent pattern:
+
+```tsx
+const { data, loading, error, refetch } = useHook(/* params */);
+```
+
+## Fetching Bible Content
+
+### usePassage
+
+Fetch a Bible passage (verse, verse range, or chapter):
+
+```tsx
+import { usePassage } from '@youversion/platform-react-hooks';
+
+function CustomPassageDisplay() {
+  const { passage, loading, error, refetch } = usePassage({
+    versionId: 111,              // Bible version ID
+    usfm: 'JHN.3.16',           // USFM reference
+    format: 'html',             // 'html' | 'text'
+    include_headings: true,     // Include section headings
+    include_notes: true,        // Include footnotes
+  });
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      <h2>{passage?.reference}</h2>
+      <div dangerouslySetInnerHTML={{ __html: passage?.content || '' }} />
+      <button onClick={refetch}>Refresh</button>
+    </div>
+  );
+}
+```
+
+### useVerses
+
+Fetch individual verses in a chapter:
+
+```tsx
+import { useVerses } from '@youversion/platform-react-hooks';
+
+function VerseList() {
+  const { verses, loading, error } = useVerses(
+    111,   // versionId
+    'JHN', // book
+    3      // chapter
+  );
+
+  if (loading) return <div>Loading verses...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <ul>
+      {verses?.data.map((verse) => (
+        <li key={verse.id}>
+          <strong>{verse.number}.</strong> {verse.text}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### useChapter
+
+Fetch a complete chapter:
+
+```tsx
+import { useChapter } from '@youversion/platform-react-hooks';
+
+function ChapterDisplay() {
+  const { chapter, loading, error } = useChapter(
+    3034,  // versionId (Berean Standard Bible)
+    'GEN', // book
+    1      // chapter
+  );
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <article>
+      <h1>{chapter?.book} {chapter?.chapter}</h1>
+      <div dangerouslySetInnerHTML={{ __html: chapter?.content || '' }} />
+    </article>
+  );
+}
+```
+
+## Bible Metadata
+
+### useVersion
+
+Get Bible version details:
+
+```tsx
+import { useVersion } from '@youversion/platform-react-hooks';
+
+function VersionInfo({ versionId }: { versionId: number }) {
+  const { version, loading } = useVersion(versionId);
+
+  if (loading) return <div>Loading version info...</div>;
+
+  return (
+    <div className="version-card">
+      <h3>{version?.title}</h3>
+      <p>
+        <strong>{version?.localized_abbreviation}</strong>
+        {' • '}
+        {version?.language_tag}
+      </p>
+      {version?.copyright && (
+        <small>{version.copyright}</small>
+      )}
+    </div>
+  );
+}
+```
+
+### useVersions
+
+Fetch available Bible versions by language:
+
+```tsx
+import { useVersions } from '@youversion/platform-react-hooks';
+
+function VersionList() {
+  const { versions, loading } = useVersions('en'); // English versions
+
+  if (loading) return <div>Loading versions...</div>;
+
+  return (
+    <select>
+      {versions?.data.map((version) => (
+        <option key={version.id} value={version.id}>
+          {version.title} ({version.localized_abbreviation})
+        </option>
+      ))}
+    </select>
+  );
+}
+```
+
+### useBooks
+
+Get books available in a version:
+
+```tsx
+import { useBooks } from '@youversion/platform-react-hooks';
+
+function BookSelector({ versionId }: { versionId: number }) {
+  const { books, loading } = useBooks(versionId);
+
+  if (loading) return <div>Loading books...</div>;
+
+  return (
+    <div className="book-grid">
+      {books?.data.map((book) => (
+        <button key={book.id}>
+          {book.title}
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+### useChapters
+
+Get chapters in a book:
+
+```tsx
+import { useChapters } from '@youversion/platform-react-hooks';
+
+function ChapterSelector({ versionId, book }: { versionId: number; book: string }) {
+  const { chapters, loading } = useChapters(versionId, book);
+
+  if (loading) return <div>Loading chapters...</div>;
+
+  return (
+    <div className="chapter-list">
+      {chapters?.data.map((chapter) => (
+        <button key={chapter.id}>
+          {chapter.chapter}
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+## Special Features
+
+### useVerseOfTheDay
+
+Get the verse of the day:
+
+```tsx
+import { useVerseOfTheDay, usePassage, getDayOfYear } from '@youversion/platform-react-hooks';
+
+function DailyVerse() {
+  const today = getDayOfYear(new Date());
+  const { data: votd, loading: votdLoading } = useVerseOfTheDay(today);
+  const { passage, loading: passageLoading } = usePassage({
+    versionId: 111,
+    usfm: votd?.passage_id || '',
+    options: { enabled: !!votd?.passage_id },
+  });
+
+  if (votdLoading || passageLoading) return <div>Loading...</div>;
+
+  return (
+    <div className="daily-verse">
+      <h2>Verse of the Day</h2>
+      <p>{passage?.content}</p>
+      <cite>{passage?.reference}</cite>
+    </div>
+  );
+}
+```
+
+### useHighlights (Requires Authentication)
+
+Manage user highlights:
+
+```tsx
+import { useHighlights } from '@youversion/platform-react-hooks';
+import { useState } from 'react';
+
+function HighlightManager() {
+  const { highlights, loading, createHighlight, deleteHighlight } = useHighlights({
+    version_id: 111,
+  });
+
+  const [selectedColor, setSelectedColor] = useState('yellow');
+
+  const handleHighlight = async (passageId: string) => {
+    try {
+      await createHighlight({
+        passage_id: passageId,
+        color: selectedColor,
+      });
+      console.log('Highlight created!');
+    } catch (error) {
+      console.error('Failed to create highlight:', error);
+    }
+  };
+
+  const handleDelete = async (passageId: string) => {
+    try {
+      await deleteHighlight(passageId);
+      console.log('Highlight deleted!');
+    } catch (error) {
+      console.error('Failed to delete highlight:', error);
+    }
+  };
+
+  if (loading) return <div>Loading highlights...</div>;
+
+  return (
+    <div>
+      <h3>Your Highlights ({highlights?.data.length || 0})</h3>
+      <ul>
+        {highlights?.data.map((highlight) => (
+          <li key={highlight.id}>
+            <span style={{ backgroundColor: highlight.color }}>
+              {highlight.passage_id}
+            </span>
+            <button onClick={() => handleDelete(highlight.passage_id)}>
+              Delete
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+## Authentication
+
+### useYVAuth
+
+Manage user authentication:
+
+```tsx
+import { useYVAuth } from '@youversion/platform-react-hooks';
+
+function AuthStatus() {
+  const { auth, userInfo, signIn, signOut } = useYVAuth();
+
+  if (auth.isLoading) {
+    return <div>Checking authentication...</div>;
+  }
+
+  if (!auth.isAuthenticated) {
+    return (
+      <button 
+        onClick={() => signIn({ 
+          scopes: ['profile'],
+          redirectUrl: window.location.origin + '/callback',
+        })}
+      >
+        Sign In with YouVersion
+      </button>
+    );
+  }
+
+  return (
+    <div className="user-profile">
+      {userInfo?.avatarUrlFormat && (
+        <img 
+          src={userInfo.getAvatarUrl(64, 64)?.toString()} 
+          alt={userInfo.name || 'User'}
+        />
+      )}
+      <p>Welcome, {userInfo?.name}!</p>
+      <button onClick={signOut}>Sign Out</button>
+    </div>
+  );
+}
+```
+
+## Advanced Patterns
+
+### Conditional Fetching
+
+Use the `enabled` option to control when data is fetched:
+
+```tsx
+import { usePassage } from '@youversion/platform-react-hooks';
+import { useState } from 'react';
+
+function ConditionalFetch() {
+  const [reference, setReference] = useState('');
+  const [shouldFetch, setShouldFetch] = useState(false);
+
+  const { passage, loading, error } = usePassage({
+    versionId: 111,
+    usfm: reference,
+    options: {
+      enabled: shouldFetch && reference.length > 0,
+    },
+  });
+
+  return (
+    <div>
+      <input
+        type="text"
+        placeholder="Enter reference (e.g., JHN.3.16)"
+        value={reference}
+        onChange={(e) => setReference(e.target.value)}
+      />
+      <button onClick={() => setShouldFetch(true)}>
+        Fetch Passage
+      </button>
+
+      {loading && <div>Loading...</div>}
+      {error && <div>Error: {error.message}</div>}
+      {passage && (
+        <div>
+          <h3>{passage.reference}</h3>
+          <div dangerouslySetInnerHTML={{ __html: passage.content }} />
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Combined Hooks
+
+Build complex features by combining multiple hooks:
+
+```tsx
+import { useBooks, useChapters, usePassage } from '@youversion/platform-react-hooks';
+import { useState } from 'react';
+
+function BibleNavigator() {
+  const [versionId] = useState(111);
+  const [selectedBook, setSelectedBook] = useState('');
+  const [selectedChapter, setSelectedChapter] = useState('');
+
+  const { books, loading: booksLoading } = useBooks(versionId);
+  const { chapters, loading: chaptersLoading } = useChapters(
+    versionId,
+    selectedBook,
+    { enabled: !!selectedBook }
+  );
+  const { passage, loading: passageLoading } = usePassage({
+    versionId,
+    usfm: selectedBook && selectedChapter 
+      ? `${selectedBook}.${selectedChapter}` 
+      : '',
+    options: { enabled: !!(selectedBook && selectedChapter) },
+  });
+
+  return (
+    <div className="navigator">
+      {/* Book selector */}
+      <select 
+        value={selectedBook} 
+        onChange={(e) => {
+          setSelectedBook(e.target.value);
+          setSelectedChapter('');
+        }}
+        disabled={booksLoading}
+      >
+        <option value="">Select a book...</option>
+        {books?.data.map((book) => (
+          <option key={book.id} value={book.id}>
+            {book.title}
+          </option>
+        ))}
+      </select>
+
+      {/* Chapter selector */}
+      {selectedBook && (
+        <select
+          value={selectedChapter}
+          onChange={(e) => setSelectedChapter(e.target.value)}
+          disabled={chaptersLoading}
+        >
+          <option value="">Select a chapter...</option>
+          {chapters?.data.map((chapter) => (
+            <option key={chapter.id} value={chapter.chapter}>
+              Chapter {chapter.chapter}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {/* Passage display */}
+      {passageLoading && <div>Loading passage...</div>}
+      {passage && (
+        <div className="passage">
+          <h2>{passage.reference}</h2>
+          <div dangerouslySetInnerHTML={{ __html: passage.content }} />
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Custom Data Transformations
+
+Process fetched data with useMemo:
+
+```tsx
+import { useVerses } from '@youversion/platform-react-hooks';
+import { useMemo } from 'react';
+
+function VerseAnalysis() {
+  const { verses, loading } = useVerses(111, 'JHN', 3);
+
+  const analysis = useMemo(() => {
+    if (!verses?.data) return null;
+
+    const totalVerses = verses.data.length;
+    const totalWords = verses.data.reduce(
+      (sum, verse) => sum + verse.text.split(' ').length,
+      0
+    );
+    const avgWordsPerVerse = Math.round(totalWords / totalVerses);
+
+    return { totalVerses, totalWords, avgWordsPerVerse };
+  }, [verses]);
+
+  if (loading) return <div>Analyzing...</div>;
+
+  return (
+    <div className="analysis">
+      <h3>Chapter Analysis</h3>
+      <dl>
+        <dt>Total Verses:</dt>
+        <dd>{analysis?.totalVerses}</dd>
+        
+        <dt>Total Words:</dt>
+        <dd>{analysis?.totalWords}</dd>
+        
+        <dt>Avg Words/Verse:</dt>
+        <dd>{analysis?.avgWordsPerVerse}</dd>
+      </dl>
+    </div>
+  );
+}
+```
+
+## Complete Custom Application
+
+Putting it all together:
+
+```tsx
+import { useState } from 'react';
+import { 
+  usePassage, 
+  useVersion, 
+  useYVAuth,
+  useHighlights 
+} from '@youversion/platform-react-hooks';
+
+function CustomBibleApp() {
+  const [versionId, setVersionId] = useState(111);
+  const [reference, setReference] = useState('JHN.3.16');
+
+  const { auth } = useYVAuth();
+  const { version } = useVersion(versionId);
+  const { passage, loading, error } = usePassage({
+    versionId,
+    usfm: reference,
+    include_notes: true,
+  });
+  const { highlights, createHighlight } = useHighlights({
+    version_id: versionId,
+  }, {
+    enabled: auth.isAuthenticated,
+  });
+
+  const isHighlighted = highlights?.data.some(
+    (h) => h.passage_id === reference
+  );
+
+  return (
+    <div className="app">
+      <header>
+        <h1>My Bible App</h1>
+        <select value={versionId} onChange={(e) => setVersionId(Number(e.target.value))}>
+          <option value={111}>NIV</option>
+          <option value={3034}>BSB</option>
+        </select>
+      </header>
+
+      <main>
+        <input
+          type="text"
+          value={reference}
+          onChange={(e) => setReference(e.target.value)}
+          placeholder="Enter reference (e.g., JHN.3.16)"
+        />
+
+        {loading && <div>Loading...</div>}
+        {error && <div>Error: {error.message}</div>}
+        {passage && (
+          <article>
+            <h2>{passage.reference}</h2>
+            <p><em>{version?.title}</em></p>
+            <div dangerouslySetInnerHTML={{ __html: passage.content }} />
+            
+            {auth.isAuthenticated && (
+              <button
+                onClick={() => createHighlight({
+                  passage_id: reference,
+                  color: 'yellow',
+                })}
+                disabled={isHighlighted}
+              >
+                {isHighlighted ? 'Highlighted' : 'Highlight'}
+              </button>
+            )}
+          </article>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export default CustomBibleApp;
+```
+
+## Available Hooks Reference
+
+### Content Hooks
+- `usePassage` - Fetch a passage (verse, range, or chapter)
+- `useVerse` - Fetch a single verse
+- `useVerses` - Fetch all verses in a chapter
+- `useChapter` - Fetch a chapter
+
+### Metadata Hooks
+- `useVersion` - Get version details
+- `useVersions` - List available versions
+- `useBooks` - Get books in a version
+- `useBook` - Get book details
+- `useChapters` - Get chapters in a book
+- `useLanguages` - List available languages
+- `useLanguage` - Get language details
+
+### Special Feature Hooks
+- `useVerseOfTheDay` - Get daily verse
+- `useHighlights` - Manage user highlights (auth required)
+- `useYVAuth` - Authentication state and methods
+
+### Utility Hooks
+- `useTheme` - Get current theme from provider
+- `useBibleClient` - Access Bible API client
+- `useLanguageClient` - Access Language API client
+
+## Related Documentation
+
+- [Verse Display](/examples/verse-display) - Pre-built verse component
+- [Bible Reader](/examples/bible-reader) - Complete reading interface
+- [Version Picker](/examples/version-picker) - Version selection component

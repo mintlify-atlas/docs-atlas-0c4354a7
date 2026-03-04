@@ -1,0 +1,366 @@
+---
+title: "Building a Bible Reader"
+description: "Create a complete Bible reading experience with navigation, settings, and user authentication"
+---
+
+The `BibleReader` component provides a full-featured Bible reading experience out of the box. It's a compound component that combines text display, navigation, and customization controls.
+
+## Quick Start
+
+The simplest Bible reader requires just three pieces:
+
+```tsx
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function SimpleBibleReader() {
+  return (
+    <div style={{ height: '100vh' }}>
+      <BibleReader.Root
+        defaultBook="JHN"
+        defaultChapter="3"
+        defaultVersionId={3034}
+      >
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+<Info>
+The `BibleReader.Root` component should have a defined height (either through a parent container or directly) for proper scrolling behavior.
+</Info>
+
+## Component Structure
+
+The `BibleReader` is a compound component with three parts:
+
+- **Root**: Provides context and manages state
+- **Content**: Displays the Bible text with chapter heading
+- **Toolbar**: Navigation controls and settings
+
+## Controlled vs Uncontrolled
+
+The reader supports both controlled and uncontrolled usage.
+
+### Uncontrolled (Default)
+
+Let the component manage its own state:
+
+```tsx
+<BibleReader.Root
+  defaultBook="JHN"
+  defaultChapter="3"
+  defaultVersionId={3034}
+>
+  <BibleReader.Content />
+  <BibleReader.Toolbar />
+</BibleReader.Root>
+```
+
+### Controlled
+
+Manage the state yourself for integration with routing or app state:
+
+```tsx
+import { useState } from 'react';
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function ControlledReader() {
+  const [book, setBook] = useState('JHN');
+  const [chapter, setChapter] = useState('3');
+  const [versionId, setVersionId] = useState(3034);
+
+  return (
+    <div style={{ height: '100vh' }}>
+      <BibleReader.Root
+        book={book}
+        onBookChange={setBook}
+        chapter={chapter}
+        onChapterChange={setChapter}
+        versionId={versionId}
+        onVersionChange={setVersionId}
+      >
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+
+      {/* Display current location */}
+      <p>Reading: {book} {chapter} (Version {versionId})</p>
+    </div>
+  );
+}
+```
+
+## Customizing Appearance
+
+Configure font, size, and theme:
+
+```tsx
+import {
+  BibleReader,
+  SOURCE_SERIF_FONT,
+  INTER_FONT,
+} from '@youversion/platform-react-ui';
+
+function CustomStyledReader() {
+  return (
+    <div style={{ height: '100vh' }}>
+      <BibleReader.Root
+        defaultBook="PSA"
+        defaultChapter="23"
+        defaultVersionId={3034}
+        fontFamily={SOURCE_SERIF_FONT}  // or INTER_FONT
+        fontSize={18}                    // 12-20 px
+        lineHeight={1.8}
+        showVerseNumbers={true}
+        background="light"               // "light" or "dark"
+      >
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+### Available Fonts
+
+```tsx
+import { SOURCE_SERIF_FONT, INTER_FONT } from '@youversion/platform-react-ui';
+
+// Serif (traditional, readable)
+fontFamily={SOURCE_SERIF_FONT}  // "Source Serif 4", serif
+
+// Sans-serif (modern, clean)
+fontFamily={INTER_FONT}  // "Inter", sans-serif
+```
+
+## Toolbar Placement
+
+Place the toolbar at the top or bottom:
+
+```tsx
+{/* Toolbar at top */}
+<BibleReader.Root defaultBook="JHN" defaultChapter="3" defaultVersionId={3034}>
+  <BibleReader.Toolbar border="bottom" />
+  <BibleReader.Content />
+</BibleReader.Root>
+
+{/* Toolbar at bottom (default) */}
+<BibleReader.Root defaultBook="JHN" defaultChapter="3" defaultVersionId={3034}>
+  <BibleReader.Content />
+  <BibleReader.Toolbar border="top" />
+</BibleReader.Root>
+```
+
+## Reading Session Persistence
+
+The reader automatically saves user preferences to localStorage:
+
+- **Font size**: Persisted across sessions
+- **Font family**: Remembered between visits
+
+No additional code required - this works automatically!
+
+```tsx
+// User adjusts font size → saved to localStorage automatically
+// On next visit → previous font size is restored
+<BibleReader.Root defaultBook="JHN" defaultChapter="3" defaultVersionId={3034}>
+  <BibleReader.Content />
+  <BibleReader.Toolbar />
+</BibleReader.Root>
+```
+
+## Navigation Features
+
+The toolbar provides comprehensive navigation:
+
+### Chapter Navigation
+
+- **Left/Right arrows**: Previous/Next chapter
+- **Book/Chapter picker**: Jump to any book and chapter
+- Automatically handles book boundaries (e.g., end of Matthew → beginning of Mark)
+
+### Version Picker
+
+- Search and filter Bible versions
+- Organized by language
+- Recent versions shown first
+
+### Settings Menu
+
+- **Font size controls**: A⁻ and A⁺ buttons
+- **Font family toggle**: Switch between serif and sans-serif
+
+## User Authentication
+
+Enable user authentication to show sign-in controls:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function AppWithAuth() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      includeAuth={true}
+      authRedirectUrl="https://yourapp.com/callback"
+    >
+      <div style={{ height: '100vh' }}>
+        <BibleReader.Root defaultBook="JHN" defaultChapter="3" defaultVersionId={3034}>
+          <BibleReader.Content />
+          <BibleReader.Toolbar />
+          {/* User menu appears automatically in toolbar when auth is enabled */}
+        </BibleReader.Root>
+      </div>
+    </YouVersionProvider>
+  );
+}
+```
+
+<Note>
+When `includeAuth` is true in the provider, the toolbar automatically displays a user menu with sign in/out options.
+</Note>
+
+## Handling Unavailable Chapters
+
+The reader gracefully handles chapters that don't exist in a version:
+
+```tsx
+// If a chapter is unavailable in the selected version,
+// the reader shows:
+// "This chapter is not available in this version.
+//  Please choose a different chapter or version."
+
+<BibleReader.Root
+  defaultBook="ACT"        // Acts
+  defaultChapter="INTRO1"  // Introduction (not in all versions)
+  defaultVersionId={3034}
+>
+  <BibleReader.Content />
+  <BibleReader.Toolbar />
+</BibleReader.Root>
+```
+
+## Complete Example with Next.js
+
+Here's a full implementation using Next.js App Router:
+
+```tsx
+// app/bible-reader/page.tsx
+'use client';
+
+import { BibleReader } from '@youversion/platform-react-ui';
+
+export default function BibleReaderPage() {
+  return (
+    <div style={{ height: '100vh' }}>
+      <BibleReader.Root
+        defaultBook="JHN"
+        defaultChapter="3"
+        defaultVersionId={3034}
+      >
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+```tsx
+// app/layout.tsx
+import { YouVersionProvider } from '@youversion/platform-react-ui';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <YouVersionProvider
+          appKey={process.env.NEXT_PUBLIC_YVP_APP_KEY!}
+          includeAuth={true}
+          authRedirectUrl={process.env.NEXT_PUBLIC_REDIRECT_URI!}
+        >
+          {children}
+        </YouVersionProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+## Integration with Routing
+
+Sync the reader with URL parameters:
+
+```tsx
+'use client';
+
+import { useSearchParams, useRouter } from 'next/navigation';
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function RoutedBibleReader() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const book = searchParams.get('book') || 'JHN';
+  const chapter = searchParams.get('chapter') || '3';
+  const versionId = Number(searchParams.get('version')) || 3034;
+
+  const handleBookChange = (newBook: string) => {
+    router.push(`?book=${newBook}&chapter=${chapter}&version=${versionId}`);
+  };
+
+  const handleChapterChange = (newChapter: string) => {
+    router.push(`?book=${book}&chapter=${newChapter}&version=${versionId}`);
+  };
+
+  const handleVersionChange = (newVersion: number) => {
+    router.push(`?book=${book}&chapter=${chapter}&version=${newVersion}`);
+  };
+
+  return (
+    <div style={{ height: '100vh' }}>
+      <BibleReader.Root
+        book={book}
+        onBookChange={handleBookChange}
+        chapter={chapter}
+        onChapterChange={handleChapterChange}
+        versionId={versionId}
+        onVersionChange={handleVersionChange}
+      >
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+## Accessibility Features
+
+The Bible Reader includes built-in accessibility:
+
+- **Keyboard navigation**: Full keyboard support for all controls
+- **ARIA labels**: Proper labeling for screen readers
+- **Focus management**: Logical focus order
+- **Loading states**: Announced to screen readers
+- **Error messages**: Accessible error announcements
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="User Authentication" icon="lock" href="/guides/user-authentication">
+    Add sign-in and user profiles
+  </Card>
+  <Card title="Styling Components" icon="palette" href="/guides/styling-components">
+    Customize the appearance further
+  </Card>
+</CardGroup>

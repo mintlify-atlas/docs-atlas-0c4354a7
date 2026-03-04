@@ -1,0 +1,246 @@
+---
+title: BibleChapterPicker
+description: Navigate Bible books and chapters with search and accordion interface
+---
+
+The `BibleChapterPicker` is a compound component that provides an interface for selecting Bible books and chapters with search functionality and an accordion layout.
+
+## Basic Usage
+
+```tsx
+import { useState } from 'react';
+import { BibleChapterPicker } from '@youversion/platform-react-ui';
+
+function MyComponent() {
+  const [book, setBook] = useState('GEN');
+  const [chapter, setChapter] = useState('1');
+
+  return (
+    <BibleChapterPicker.Root
+      versionId={111}
+      book={book}
+      onBookChange={setBook}
+      chapter={chapter}
+      onChapterChange={setChapter}
+    >
+      <BibleChapterPicker.Trigger />
+    </BibleChapterPicker.Root>
+  );
+}
+```
+
+## Component Structure
+
+BibleChapterPicker is a compound component with two parts:
+
+- `BibleChapterPicker.Root` - Container that manages state and renders the popover
+- `BibleChapterPicker.Trigger` - Button to open the picker
+
+## Root Props
+
+<ParamField path="versionId" type="number" required>
+  Bible version ID to load books from.
+</ParamField>
+
+<ParamField path="book" type="string">
+  Controlled book ID (e.g., "GEN", "JHN").
+</ParamField>
+
+<ParamField path="defaultBook" type="string">
+  Default book ID for uncontrolled mode.
+  
+  Default: `""`
+</ParamField>
+
+<ParamField path="onBookChange" type="(book: string) => void">
+  Callback when book is selected.
+</ParamField>
+
+<ParamField path="chapter" type="string">
+  Controlled chapter ID (e.g., "1", "INTRO").
+</ParamField>
+
+<ParamField path="defaultChapter" type="string">
+  Default chapter ID for uncontrolled mode.
+  
+  Default: `""`
+</ParamField>
+
+<ParamField path="onChapterChange" type="(chapter: string) => void">
+  Callback when chapter is selected.
+</ParamField>
+
+<ParamField path="background" type="'light' | 'dark'">
+  Theme override.
+  
+  Default: Inherits from provider
+</ParamField>
+
+## Trigger Props
+
+<ParamField path="asChild" type="boolean">
+  Whether to use the child element as the trigger.
+  
+  Default: `true`
+</ParamField>
+
+<ParamField path="children" type="ReactNode | ((props) => ReactNode)">
+  Custom trigger content or render function. The render function receives:
+  - `book`: Current book ID
+  - `chapter`: Current chapter ID
+  - `chapterLabel`: Display label for chapter (e.g., "Intro", "1")
+  - `currentBook`: Full book object
+  - `loading`: Loading state
+  
+  Default: Button showing "[Book] [Chapter]"
+</ParamField>
+
+## Examples
+
+### Default Trigger
+
+```tsx
+<BibleChapterPicker.Root
+  versionId={111}
+  book={book}
+  onBookChange={setBook}
+  chapter={chapter}
+  onChapterChange={setChapter}
+>
+  <BibleChapterPicker.Trigger />
+</BibleChapterPicker.Root>
+```
+
+### Custom Trigger
+
+```tsx
+<BibleChapterPicker.Root
+  versionId={111}
+  book={book}
+  onBookChange={setBook}
+  chapter={chapter}
+  onChapterChange={setChapter}
+>
+  <BibleChapterPicker.Trigger>
+    {({ currentBook, chapterLabel, loading }) => (
+      <button disabled={loading}>
+        {loading ? 'Loading...' : `${currentBook?.title || 'Select'} ${chapterLabel || ''}`}
+      </button>
+    )}
+  </BibleChapterPicker.Trigger>
+</BibleChapterPicker.Root>
+```
+
+### Uncontrolled Mode
+
+```tsx
+<BibleChapterPicker.Root
+  versionId={111}
+  defaultBook="MAT"
+  defaultChapter="5"
+>
+  <BibleChapterPicker.Trigger />
+</BibleChapterPicker.Root>
+```
+
+### Dark Theme
+
+```tsx
+<BibleChapterPicker.Root
+  versionId={111}
+  book={book}
+  onBookChange={setBook}
+  chapter={chapter}
+  onChapterChange={setChapter}
+  background="dark"
+>
+  <BibleChapterPicker.Trigger />
+</BibleChapterPicker.Root>
+```
+
+## Features
+
+### Accordion Interface
+
+- Expandable book list with chapter buttons
+- Auto-scrolls to selected book when opened
+- Smooth animations for expand/collapse
+- Only one book expanded at a time
+
+### Search
+
+- Real-time search by book name
+- Case-insensitive filtering
+- Search input at bottom of dialog
+- Clears on selection
+
+### Intro Chapters
+
+- Info icon button for books with intro chapters
+- Proper labeling ("Intro" not "INTRO")
+- Selectable like regular chapters
+
+### Chapter Grid
+
+- 5-column grid layout for chapter buttons
+- Responsive sizing
+- Visual feedback for selection
+
+### Auto-Scroll Behavior
+
+- Scrolls to current book when dialog opens
+- Smooth scroll animation
+- Expands current book accordion
+
+### Accessibility
+
+- Keyboard navigation
+- ARIA labels and roles
+- Focus management
+- Screen reader support
+
+## Chapter Label Formatting
+
+The picker formats chapter labels intelligently:
+
+```tsx
+// Regular chapters: "1", "2", "3"
+// Intro chapters: "Intro" (not "INTRO")
+
+<BibleChapterPicker.Trigger>
+  {({ chapterLabel }) => (
+    <span>{chapterLabel}</span> // "Intro" or "1"
+  )}
+</BibleChapterPicker.Trigger>
+```
+
+## Handling Special Chapters
+
+Some versions include intro chapters:
+
+```tsx
+// Check if current chapter is an intro
+const currentBook = books?.data?.find(b => b.id === book);
+const isIntro = currentBook?.intro && chapter === currentBook.intro.id;
+
+if (isIntro) {
+  // Display: "Introduction to [Book]"
+  // Chapter ID: "INTRO" or similar
+  // Chapter label: "Intro"
+}
+```
+
+## Styling
+
+The picker uses:
+- Accordion with border separators
+- 5-column grid for chapters
+- Search input at bottom
+- Scrollable content area
+- Visual feedback for expanded state
+
+## Related Components
+
+- [BibleVersionPicker](/api/ui/bible-version-picker) - Version selection
+- [BibleReader](/api/ui/bible-reader) - Full reading experience
+- [BibleTextView](/api/ui/bible-text-view) - Verse display

@@ -1,0 +1,212 @@
+---
+title: BibleVersionPicker
+description: Bible version selector with language filtering, search, and recent versions
+---
+
+The `BibleVersionPicker` is a compound component that provides a rich interface for selecting Bible versions with language filtering, search functionality, and recently used versions.
+
+## Basic Usage
+
+```tsx
+import { useState } from 'react';
+import { BibleVersionPicker } from '@youversion/platform-react-ui';
+
+function MyComponent() {
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <BibleVersionPicker.Root
+      versionId={versionId}
+      onVersionChange={setVersionId}
+    >
+      <BibleVersionPicker.Trigger />
+      <BibleVersionPicker.Content />
+    </BibleVersionPicker.Root>
+  );
+}
+```
+
+## Component Structure
+
+BibleVersionPicker is a compound component with three parts:
+
+- `BibleVersionPicker.Root` - Container that manages state
+- `BibleVersionPicker.Trigger` - Button to open the picker
+- `BibleVersionPicker.Content` - The picker dialog content
+
+## Root Props
+
+<ParamField path="versionId" type="number" required>
+  Currently selected version ID.
+</ParamField>
+
+<ParamField path="onVersionChange" type="(versionId: number) => void">
+  Callback when version is selected.
+</ParamField>
+
+<ParamField path="background" type="'light' | 'dark'">
+  Theme override.
+  
+  Default: Inherits from provider
+</ParamField>
+
+<ParamField path="side" type="'top' | 'right' | 'bottom' | 'left'">
+  Position of the popover relative to the trigger.
+  
+  Default: `"top"`
+</ParamField>
+
+## Trigger Props
+
+<ParamField path="asChild" type="boolean">
+  Whether to use the child element as the trigger.
+  
+  Default: `true`
+</ParamField>
+
+<ParamField path="children" type="ReactNode | ((props) => ReactNode)">
+  Custom trigger content or render function. The render function receives:
+  - `version`: Current version object
+  - `loading`: Loading state
+  
+  Default: Button showing version abbreviation
+</ParamField>
+
+## Examples
+
+### Default Trigger
+
+```tsx
+<BibleVersionPicker.Root versionId={111} onVersionChange={setVersionId}>
+  <BibleVersionPicker.Trigger />
+  <BibleVersionPicker.Content />
+</BibleVersionPicker.Root>
+```
+
+### Custom Trigger
+
+```tsx
+import { Button } from './ui/button';
+import { BookOpenIcon } from './icons/book-open';
+
+<BibleVersionPicker.Root versionId={111} onVersionChange={setVersionId}>
+  <BibleVersionPicker.Trigger>
+    <Button size="icon">
+      <BookOpenIcon className="w-4 h-4" />
+    </Button>
+  </BibleVersionPicker.Trigger>
+  <BibleVersionPicker.Content />
+</BibleVersionPicker.Root>
+```
+
+### Render Function
+
+```tsx
+<BibleVersionPicker.Root versionId={111} onVersionChange={setVersionId}>
+  <BibleVersionPicker.Trigger>
+    {({ version, loading }) => (
+      <button disabled={loading}>
+        {loading ? 'Loading...' : version?.title || 'Select version'}
+      </button>
+    )}
+  </BibleVersionPicker.Trigger>
+  <BibleVersionPicker.Content />
+</BibleVersionPicker.Root>
+```
+
+### Dark Theme
+
+```tsx
+<BibleVersionPicker.Root
+  versionId={111}
+  onVersionChange={setVersionId}
+  background="dark"
+>
+  <BibleVersionPicker.Trigger />
+  <BibleVersionPicker.Content />
+</BibleVersionPicker.Root>
+```
+
+### Custom Position
+
+```tsx
+<BibleVersionPicker.Root
+  versionId={111}
+  onVersionChange={setVersionId}
+  side="bottom"
+>
+  <BibleVersionPicker.Trigger />
+  <BibleVersionPicker.Content />
+</BibleVersionPicker.Root>
+```
+
+## Features
+
+### Language Filtering
+
+- Suggested tab shows regional and browser-preferred languages
+- All tab shows alphabetically sorted languages
+- Language count badge shows available versions
+- Displays language names in English and native script
+
+### Search
+
+- Real-time search across version titles and abbreviations
+- Filters both recent and all versions
+- Search resets when dialog closes or version is selected
+
+### Recent Versions
+
+- Automatically tracks last 3 selected versions
+- Stored in localStorage: `youversion-platform:picker:recent-versions`
+- Recent versions shown at top when present
+- Filtered by search query
+
+### Version Abbreviation Icons
+
+- Auto-scaling abbreviation display
+- Splits version codes (e.g., "KJV2" → "KJV" + "2")
+- Responsive font sizing to fit container
+
+### Accessibility
+
+- Keyboard navigation
+- ARIA labels and roles
+- Focus management
+- Screen reader support
+
+## Persistence
+
+Recent versions are stored in localStorage:
+
+```typescript
+interface RecentVersion {
+  id: number;
+  title: string;
+  localized_abbreviation: string;
+  abbreviation: string;
+}
+
+const key = 'youversion-platform:picker:recent-versions';
+```
+
+The picker automatically:
+- Loads recent versions on mount
+- Saves selected versions
+- Maintains max of 3 recent versions
+- Moves selected version to top of list
+
+## Styling
+
+The picker displays:
+- Version icons with auto-scaled abbreviations
+- Selected version with `yv:bg-muted` background
+- Language tabs with version count
+- Searchable version list
+- Loading states during API calls
+
+## Related Components
+
+- [BibleChapterPicker](/api/ui/bible-chapter-picker) - Chapter selection
+- [BibleReader](/api/ui/bible-reader) - Full reading experience
+- [BibleCard](/api/ui/bible-card) - Embeddable passage card

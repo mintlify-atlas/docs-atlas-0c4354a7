@@ -1,0 +1,569 @@
+---
+title: Utility Hooks
+description: Helper hooks and utility functions for common operations
+---
+
+Utility hooks and functions provide common functionality for debouncing, HTML parsing, date calculations, and more.
+
+## Hooks
+
+### useDebounce
+
+Debounces a value, delaying updates until after a specified delay has passed since the last change. Useful for optimizing search inputs and other rapidly changing values.
+
+<ParamField path="value" type="T" required>
+  The value to debounce (can be any type)
+</ParamField>
+
+<ParamField path="delay" type="number" required>
+  Delay in milliseconds before updating the debounced value
+</ParamField>
+
+#### Returns
+
+<ResponseField name="debouncedValue" type="T">
+  The debounced value, updated only after the delay period
+</ResponseField>
+
+#### Usage
+
+<CodeGroup>
+```tsx Search Input
+import { useDebounce, useVersions } from '@youversion/platform-react-hooks';
+import { useState } from 'react';
+
+function VersionSearch() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
+  
+  // Only fetches when user stops typing for 300ms
+  const { versions, loading } = useVersions('en', undefined, {
+    enabled: debouncedSearch.length > 0,
+  });
+  
+  const filteredVersions = versions?.data.filter(v => 
+    v.title.toLowerCase().includes(debouncedSearch.toLowerCase())
+  );
+  
+  return (
+    <div>
+      <input 
+        type="text"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Search versions..."
+      />
+      {loading && <div>Searching...</div>}
+      <ul>
+        {filteredVersions?.map(v => (
+          <li key={v.id}>{v.title}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+```tsx Auto-save
+import { useDebounce } from '@youversion/platform-react-hooks';
+import { useState, useEffect } from 'react';
+
+function NoteEditor({ noteId }) {
+  const [content, setContent] = useState('');
+  const debouncedContent = useDebounce(content, 1000);
+  
+  // Auto-saves 1 second after user stops typing
+  useEffect(() => {
+    if (debouncedContent) {
+      saveNote(noteId, debouncedContent);
+    }
+  }, [debouncedContent, noteId]);
+  
+  return (
+    <textarea 
+      value={content}
+      onChange={(e) => setContent(e.target.value)}
+      placeholder="Type your note..."
+    />
+  );
+}
+```
+
+```tsx Resize Handler
+import { useDebounce } from '@youversion/platform-react-hooks';
+import { useState, useEffect } from 'react';
+
+function ResponsiveComponent() {
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const debouncedWidth = useDebounce(windowWidth, 150);
+  
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Only recalculates layout after resize stops for 150ms
+  const columns = debouncedWidth > 768 ? 3 : 1;
+  
+  return <div>Columns: {columns}</div>;
+}
+```
+</CodeGroup>
+
+---
+
+### useFilteredVersions
+
+Filters a list of Bible versions based on search term, language, and recently used versions.
+
+<ParamField path="versions" type="BibleVersion[]" required>
+  Array of Bible versions to filter
+</ParamField>
+
+<ParamField path="searchTerm" type="string" required>
+  Search query to filter by title, abbreviation, or language
+</ParamField>
+
+<ParamField path="selectedLanguage" type="string" required>
+  Language code to filter by (use '*' for all languages)
+</ParamField>
+
+<ParamField path="recentVersions" type="Pick<BibleVersion, 'id' | 'title' | 'localized_abbreviation'>[]">
+  Optional array of recent versions to exclude from results
+</ParamField>
+
+#### Returns
+
+<ResponseField name="filteredVersions" type="BibleVersion[]">
+  Filtered and sorted array of Bible versions
+</ResponseField>
+
+#### Usage
+
+```tsx
+import { useFilteredVersions, useVersions } from '@youversion/platform-react-hooks';
+import { useState } from 'react';
+
+function VersionPicker() {
+  const { versions } = useVersions('*');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('*');
+  
+  const filteredVersions = useFilteredVersions(
+    versions?.data || [],
+    searchTerm,
+    selectedLanguage
+  );
+  
+  return (
+    <div>
+      <input 
+        type="text"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Search..."
+      />
+      <select 
+        value={selectedLanguage}
+        onChange={(e) => setSelectedLanguage(e.target.value)}
+      >
+        <option value="*">All Languages</option>
+        <option value="en">English</option>
+        <option value="es">Spanish</option>
+      </select>
+      
+      <ul>
+        {filteredVersions.map(v => (
+          <li key={v.id}>{v.title} ({v.abbreviation})</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+---
+
+### useChapterNavigation
+
+Provides navigation functionality for moving between chapters, including support for book boundaries and intro chapters.
+
+<Warning>
+  Requires `ReaderProvider` to be present in the component tree.
+</Warning>
+
+#### Returns
+
+<ResponseField name="canNavigatePrevious" type="boolean">
+  Whether navigation to previous chapter is possible
+</ResponseField>
+
+<ResponseField name="canNavigateNext" type="boolean">
+  Whether navigation to next chapter is possible
+</ResponseField>
+
+<ResponseField name="navigateToPrevious" type="() => void">
+  Navigate to the previous chapter (may cross book boundaries)
+</ResponseField>
+
+<ResponseField name="navigateToNext" type="() => void">
+  Navigate to the next chapter (may cross book boundaries)
+</ResponseField>
+
+<ResponseField name="currentChapterIndex" type="number">
+  Index of current chapter within the current book
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  Whether book data is being loaded
+</ResponseField>
+
+#### Usage
+
+```tsx
+import { useChapterNavigation, ReaderProvider } from '@youversion/platform-react-hooks';
+
+function ChapterNavigator() {
+  const {
+    canNavigatePrevious,
+    canNavigateNext,
+    navigateToPrevious,
+    navigateToNext,
+    currentChapterIndex,
+    isLoading,
+  } = useChapterNavigation();
+  
+  return (
+    <div>
+      <button 
+        onClick={navigateToPrevious}
+        disabled={!canNavigatePrevious || isLoading}
+      >
+        Previous Chapter
+      </button>
+      
+      <span>Chapter {currentChapterIndex + 1}</span>
+      
+      <button 
+        onClick={navigateToNext}
+        disabled={!canNavigateNext || isLoading}
+      >
+        Next Chapter
+      </button>
+    </div>
+  );
+}
+
+// Must be wrapped in ReaderProvider
+function App() {
+  return (
+    <ReaderProvider currentVersion={v} currentBook={b} currentChapter={c} currentVerse={null}>
+      <ChapterNavigator />
+    </ReaderProvider>
+  );
+}
+```
+
+---
+
+### useVerseSelection
+
+Accesses verse selection state from `VerseSelectionProvider`.
+
+<Warning>
+  Requires `VerseSelectionProvider` to be present in the component tree.
+</Warning>
+
+#### Returns
+
+<ResponseField name="selectedVerseUsfms" type="Set<string>">
+  Set of selected verse USFM identifiers
+</ResponseField>
+
+<ResponseField name="toggleVerse" type="(usfm: string) => void">
+  Toggle verse selection state
+</ResponseField>
+
+<ResponseField name="isSelected" type="(usfm: string) => boolean">
+  Check if a verse is currently selected
+</ResponseField>
+
+<ResponseField name="clearSelection" type="() => void">
+  Clear all selected verses
+</ResponseField>
+
+<ResponseField name="selectedCount" type="number">
+  Number of currently selected verses
+</ResponseField>
+
+#### Usage
+
+See [VerseSelectionProvider documentation](./providers#verseselectionprovider) for complete usage examples.
+
+---
+
+## Utility Functions
+
+### extractTextFromHtml
+
+Extracts plain text from HTML verse content, removing markup for labels, footnotes, etc.
+
+<ParamField path="html" type="string" required>
+  HTML content to extract text from
+</ParamField>
+
+#### Returns
+
+<ResponseField name="text" type="string">
+  Plain text with normalized whitespace
+</ResponseField>
+
+#### Usage
+
+```tsx
+import { extractTextFromHtml, useVerse } from '@youversion/platform-react-hooks';
+
+function PlainTextVerse({ versionId, book, chapter, verse }) {
+  const { verse: verseData } = useVerse(versionId, book, chapter, verse);
+  
+  if (!verseData) return null;
+  
+  const plainText = extractTextFromHtml(verseData.content);
+  
+  return (
+    <div>
+      <p>{plainText}</p>
+      <button onClick={() => navigator.clipboard.writeText(plainText)}>
+        Copy Text
+      </button>
+    </div>
+  );
+}
+```
+
+---
+
+### extractVersesFromHTML
+
+Splits passage HTML into individual verse segments with verse numbers.
+
+<ParamField path="html" type="string | null | undefined" required>
+  Passage HTML content (from usePassage or useChapter)
+</ParamField>
+
+#### Returns
+
+<ResponseField name="verses" type="{ verse: number; html: string }[]">
+  Array of verse objects with verse number and HTML content
+</ResponseField>
+
+#### Usage
+
+<CodeGroup>
+```tsx Individual Verses
+import { extractVersesFromHTML, useChapter } from '@youversion/platform-react-hooks';
+
+function VerseByVerseView({ versionId, book, chapterNum }) {
+  const { chapter } = useChapter(versionId, book, chapterNum);
+  
+  const verses = extractVersesFromHTML(chapter?.content);
+  
+  return (
+    <div>
+      {verses.map(({ verse, html }) => (
+        <div key={verse} className="verse">
+          <span className="verse-number">{verse}</span>
+          <span dangerouslySetInnerHTML={{ __html: html }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+```tsx With Selection
+import { 
+  extractVersesFromHTML, 
+  useChapter,
+  useVerseSelection,
+  VerseSelectionProvider 
+} from '@youversion/platform-react-hooks';
+
+function SelectableChapter({ versionId, book, chapterNum }) {
+  const { chapter } = useChapter(versionId, book, chapterNum);
+  const { isSelected, toggleVerse } = useVerseSelection();
+  
+  const verses = extractVersesFromHTML(chapter?.content);
+  
+  return (
+    <div>
+      {verses.map(({ verse, html }) => {
+        const usfm = `${book}.${chapterNum}.${verse}`;
+        return (
+          <div 
+            key={verse}
+            onClick={() => toggleVerse(usfm)}
+            className={isSelected(usfm) ? 'selected' : ''}
+          >
+            <span className="verse-number">{verse}</span>
+            <span dangerouslySetInnerHTML={{ __html: html }} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <VerseSelectionProvider>
+      <SelectableChapter versionId={1} book="GEN" chapterNum={1} />
+    </VerseSelectionProvider>
+  );
+}
+```
+</CodeGroup>
+
+---
+
+### getDayOfYear
+
+Calculates the day of year (1-366) from a Date object. Useful for `useVOTD`.
+
+<ParamField path="date" type="Date" required>
+  Date to calculate day of year for
+</ParamField>
+
+#### Returns
+
+<ResponseField name="dayOfYear" type="number">
+  Day of year (1-366)
+</ResponseField>
+
+#### Usage
+
+<CodeGroup>
+```tsx Current Day
+import { getDayOfYear, useVOTD } from '@youversion/platform-react-hooks';
+
+function TodaysVerse() {
+  const today = getDayOfYear(new Date());
+  const { data: votd, loading } = useVOTD(today);
+  
+  if (loading) return <div>Loading...</div>;
+  
+  return (
+    <div>
+      <h2>Verse of the Day</h2>
+      <p>{votd?.verse.text}</p>
+    </div>
+  );
+}
+```
+
+```tsx Specific Date
+import { getDayOfYear, useVOTD } from '@youversion/platform-react-hooks';
+
+function ChristmasVerse() {
+  const christmas = getDayOfYear(new Date(2024, 11, 25)); // Dec 25, 2024
+  const { data: votd } = useVOTD(christmas);
+  
+  return (
+    <div>
+      <h3>Christmas Day Verse</h3>
+      <p>{votd?.verse.text}</p>
+    </div>
+  );
+}
+```
+
+```tsx Date Picker
+import { getDayOfYear, useVOTD } from '@youversion/platform-react-hooks';
+import { useState } from 'react';
+
+function HistoricalVOTD() {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const dayOfYear = getDayOfYear(selectedDate);
+  const { data: votd, loading } = useVOTD(dayOfYear);
+  
+  return (
+    <div>
+      <input 
+        type="date"
+        value={selectedDate.toISOString().split('T')[0]}
+        onChange={(e) => setSelectedDate(new Date(e.target.value))}
+      />
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <div>
+          <p>{votd?.verse.text}</p>
+          <small>{votd?.verse.reference}</small>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use appropriate debounce delays">
+    Choose debounce delays based on the use case:
+    
+    ```tsx
+    // Search input - 300ms (balance responsiveness and API calls)
+    const debouncedSearch = useDebounce(search, 300);
+    
+    // Auto-save - 1000ms (reduce save frequency)
+    const debouncedContent = useDebounce(content, 1000);
+    
+    // Resize handler - 150ms (quick response to resize)
+    const debouncedWidth = useDebounce(width, 150);
+    ```
+  </Accordion>
+  
+  <Accordion title="Memoize extracted verses">
+    Use useMemo when extracting verses to avoid unnecessary re-parsing:
+    
+    ```tsx
+    import { useMemo } from 'react';
+    
+    const verses = useMemo(
+      () => extractVersesFromHTML(chapter?.content),
+      [chapter?.content]
+    );
+    ```
+  </Accordion>
+  
+  <Accordion title="Handle empty/null HTML gracefully">
+    Utility functions handle null/undefined, but always check results:
+    
+    ```tsx
+    const verses = extractVersesFromHTML(chapter?.content);
+    
+    if (verses.length === 0) {
+      return <div>No verses found</div>;
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Combine utilities for powerful features">
+    ```tsx
+    // Debounced search + filtered versions + verse extraction
+    function AdvancedSearch() {
+      const [search, setSearch] = useState('');
+      const debouncedSearch = useDebounce(search, 300);
+      const { versions } = useVersions('en');
+      const filtered = useFilteredVersions(versions?.data || [], debouncedSearch, '*');
+      
+      // ...
+    }
+    ```
+  </Accordion>
+</AccordionGroup>

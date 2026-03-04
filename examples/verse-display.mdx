@@ -1,0 +1,273 @@
+---
+title: Verse Display
+description: Learn how to display Bible verses with the BibleTextView component
+---
+
+The `BibleTextView` component provides a complete solution for displaying Bible passages with automatic formatting, verse numbers, footnotes, and more.
+
+## Basic Usage
+
+Display a single verse by providing a USFM reference and version ID:
+
+```tsx
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function SingleVerse() {
+  return (
+    <BibleTextView 
+      reference="JHN.3.16"  // USFM format: BOOK.CHAPTER.VERSE
+      versionId={111}       // NIV
+    />
+  );
+}
+```
+
+## USFM Reference Format
+
+The `reference` prop uses USFM (Unified Standard Format Markers) format:
+
+- **Single verse**: `JHN.3.16`
+- **Verse range**: `JHN.3.16-17`
+- **Entire chapter**: `JHN.3`
+- **Book abbreviations**: Use 3-letter USFM codes (e.g., `GEN`, `MAT`, `JHN`, `ROM`)
+
+<CodeGroup>
+```tsx Single Verse
+<BibleTextView 
+  reference="JHN.3.16" 
+  versionId={111}
+/>
+```
+
+```tsx Verse Range
+<BibleTextView 
+  reference="JHN.3.16-17" 
+  versionId={111}
+/>
+```
+
+```tsx Full Chapter
+<BibleTextView 
+  reference="JHN.3" 
+  versionId={111}
+/>
+```
+</CodeGroup>
+
+## Customizing Appearance
+
+Control the visual presentation with font and layout options:
+
+```tsx
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function CustomizedVerse() {
+  return (
+    <BibleTextView
+      reference="JHN.3.16"
+      versionId={111}
+      fontSize={18}                    // Font size in pixels
+      lineHeight={1.8}                 // Line height multiplier
+      fontFamily="'Georgia', serif"    // Custom font family
+      showVerseNumbers={true}          // Show/hide verse numbers
+      renderNotes={true}               // Show/hide footnotes
+      theme="light"                    // "light" | "dark"
+    />
+  );
+}
+```
+
+## Working with Loading States
+
+The component automatically handles loading and error states:
+
+```tsx
+function VerseWithStates() {
+  return (
+    <BibleTextView
+      reference="JHN.3.16"
+      versionId={111}
+    />
+  );
+  // Component shows:
+  // - Loading spinner while fetching
+  // - Error message if fetch fails
+  // - Verse content when loaded
+}
+```
+
+## Interactive Features
+
+### Verse Selection
+
+Enable verse selection for highlighting and user interaction:
+
+```tsx
+import { useState } from 'react';
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function SelectableVerses() {
+  const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
+  const [highlightedVerses, setHighlightedVerses] = useState<Record<number, boolean>>({});
+
+  const handleHighlight = () => {
+    setHighlightedVerses((prev) => {
+      const next = { ...prev };
+      for (const verse of selectedVerses) {
+        next[verse] = true;
+      }
+      return next;
+    });
+    setSelectedVerses([]);
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: '1rem' }}>
+        <p>Selected: {selectedVerses.join(', ') || 'None'}</p>
+        <button 
+          onClick={handleHighlight}
+          disabled={selectedVerses.length === 0}
+        >
+          Highlight Selected
+        </button>
+      </div>
+
+      <BibleTextView
+        reference="JHN.1"
+        versionId={111}
+        selectedVerses={selectedVerses}
+        onVerseSelect={setSelectedVerses}
+        highlightedVerses={highlightedVerses}
+      />
+    </div>
+  );
+}
+```
+
+### Footnotes
+
+Footnotes are automatically rendered as interactive popovers when `renderNotes={true}`:
+
+```tsx
+function VerseWithFootnotes() {
+  return (
+    <BibleTextView
+      reference="JHN.1.51"  // This verse has footnotes
+      versionId={111}
+      renderNotes={true}     // Enable footnote rendering
+      showVerseNumbers={true}
+    />
+  );
+  // Users can click footnote icons to see additional notes
+}
+```
+
+## Advanced: Providing Your Own Data
+
+If you're fetching passage data separately, you can provide it directly:
+
+```tsx
+import { usePassage } from '@youversion/platform-react-hooks';
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function VerseWithExternalData() {
+  const { passage, loading, error } = usePassage({
+    versionId: 111,
+    usfm: 'JHN.3.16',
+    include_headings: true,
+    include_notes: true,
+  });
+
+  return (
+    <BibleTextView
+      reference="JHN.3.16"
+      versionId={111}
+      passageState={{ passage, loading, error }}
+    />
+  );
+}
+```
+
+## Low-Level Rendering
+
+For complete control, use the `Verse.Html` component directly:
+
+```tsx
+import { Verse } from '@youversion/platform-react-ui';
+
+function CustomVerseRenderer() {
+  const htmlContent = '<div class="p"><span class="yv-v" v="16"></span><span class="yv-vlbl">16</span>For God so loved the world...</div>';
+
+  return (
+    <Verse.Html
+      html={htmlContent}
+      fontSize={16}
+      fontFamily="'Inter', sans-serif"
+      showVerseNumbers={true}
+      renderNotes={true}
+    />
+  );
+}
+```
+
+## Complete Example
+
+Here's a full example combining multiple features:
+
+```tsx
+import { useState } from 'react';
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function CompleteBibleTextExample() {
+  const [versionId, setVersionId] = useState(111); // NIV
+  const [reference, setReference] = useState('JHN.3.16');
+  const [fontSize, setFontSize] = useState(16);
+
+  return (
+    <div>
+      <div style={{ marginBottom: '2rem' }}>
+        <label>
+          Reference:
+          <input 
+            type="text" 
+            value={reference}
+            onChange={(e) => setReference(e.target.value)}
+            placeholder="e.g., JHN.3.16"
+          />
+        </label>
+
+        <label>
+          Font Size:
+          <input
+            type="range"
+            min="12"
+            max="24"
+            value={fontSize}
+            onChange={(e) => setFontSize(Number(e.target.value))}
+          />
+          {fontSize}px
+        </label>
+      </div>
+
+      <BibleTextView
+        reference={reference}
+        versionId={versionId}
+        fontSize={fontSize}
+        lineHeight={1.6}
+        showVerseNumbers={true}
+        renderNotes={true}
+        theme="light"
+      />
+    </div>
+  );
+}
+
+export default CompleteBibleTextExample;
+```
+
+## Related Components
+
+- [Verse of the Day](/examples/verse-of-the-day) - Display the daily verse in a card format
+- [Bible Reader](/examples/bible-reader) - Full-featured reading experience
+- [Version Picker](/examples/version-picker) - Let users choose Bible versions

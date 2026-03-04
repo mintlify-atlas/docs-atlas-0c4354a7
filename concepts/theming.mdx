@@ -1,0 +1,567 @@
+---
+title: Theming
+description: Customize dark mode, colors, and styling in the YouVersion Platform React SDK
+---
+
+## Overview
+
+The YouVersion Platform SDK provides a comprehensive theming system built on **Tailwind CSS v4** with automatic dark mode support, semantic color tokens, and scoped styling to prevent conflicts with your application's styles.
+
+<Info>
+All SDK styles are scoped using the `yv:` prefix and `data-yv-sdk` attributes, ensuring they don't interfere with your app's existing styles.
+</Info>
+
+## Quick Start
+
+### Set Theme Mode
+
+Configure the theme when setting up the YouVersion provider:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+
+function App() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      theme="dark"  // "light" | "dark" | "system"
+    >
+      <MyApp />
+    </YouVersionProvider>
+  );
+}
+```
+
+**Available theme modes:**
+
+- `"light"` - Force light mode
+- `"dark"` - Force dark mode
+- `"system"` - Follow system preferences (default)
+
+### System Theme Detection
+
+When using `theme="system"`, the SDK automatically detects and responds to system theme changes:
+
+```tsx
+// The SDK listens to prefers-color-scheme media query
+window.matchMedia('(prefers-color-scheme: dark)').matches
+```
+
+The theme updates automatically when users change their system preferences - no page reload required.
+
+## Tailwind CSS Integration
+
+### Auto-Injected Styles
+
+The UI package automatically injects its styles when imported:
+
+```tsx
+import { BibleReader } from '@youversion/platform-react-ui';
+// Styles are automatically injected on import
+```
+
+This happens through a side effect in the entry point (`src/index.ts`):
+
+```typescript
+import { injectStyles } from './lib/injectStyles';
+
+// Styles are embedded as __YV_STYLES__ constant via build-time replacement
+injectStyles();
+```
+
+<Note>
+No CSS files to import manually. No build steps required. Just import and use.
+</Note>
+
+### Scoped Class Prefix
+
+All Tailwind classes use the `yv:` prefix to prevent naming collisions:
+
+```tsx
+// SDK classes are prefixed
+<div className="yv:mt-4 yv:text-foreground yv:bg-background">
+  Bible content
+</div>
+
+// Your app's classes remain unprefixed
+<div className="mt-4 text-gray-900 bg-white">
+  Your content
+</div>
+```
+
+This is configured in the build process:
+
+```css
+/* global.css */
+@import 'tailwindcss/theme.css' prefix(yv);
+@import 'tailwindcss/utilities.css' prefix(yv);
+```
+
+### Data Attribute Scoping
+
+All SDK components include a `data-yv-sdk` attribute for additional scoping:
+
+```tsx
+// All SDK components render with this attribute
+<div data-yv-sdk data-yv-theme="dark">
+  <BibleReader.Root>...</BibleReader.Root>
+</div>
+```
+
+Styles are scoped to this attribute:
+
+```css
+[data-yv-sdk] {
+  /* SDK styles only apply inside this scope */
+}
+```
+
+## Color System
+
+### Semantic Tokens
+
+The SDK uses semantic color tokens that automatically adapt to light/dark mode:
+
+<CodeGroup>
+
+```tsx Using Semantic Tokens
+<div className="yv:bg-background yv:text-foreground">
+  Adapts to theme automatically
+</div>
+
+<div className="yv:bg-card yv:text-card-foreground">
+  Card with proper contrast
+</div>
+
+<div className="yv:bg-muted yv:text-muted-foreground">
+  Muted/secondary content
+</div>
+
+<button className="yv:bg-primary yv:text-primary-foreground">
+  Primary action
+</button>
+
+<button className="yv:bg-destructive yv:text-destructive-foreground">
+  Delete action
+</button>
+```
+
+```tsx Component Background Prop
+// Most components accept a background prop
+<BibleReader.Root background="dark">
+  <BibleReader.Content />
+</BibleReader.Root>
+
+<VerseOfTheDay background="light" />
+
+<YouVersionAuthButton background="dark" />
+```
+
+</CodeGroup>
+
+### Available Semantic Tokens
+
+| Token | Usage | Light Mode | Dark Mode |
+|-------|-------|------------|----------|
+| `background` | Main background | White | Gray-50 |
+| `foreground` | Main text | Gray-50 | White |
+| `card` | Card backgrounds | Gray-2 | Gray-45 |
+| `card-foreground` | Card text | Gray-50 | White |
+| `popover` | Popover backgrounds | White | Gray-48 |
+| `popover-foreground` | Popover text | Gray-50 | White |
+| `primary` | Primary actions | Gray-50 | Red (YV brand) |
+| `primary-foreground` | Primary action text | White | White |
+| `secondary` | Secondary actions | Warm-neutral | Warm-neutral-dm |
+| `muted` | Muted backgrounds | Gray-5 | Gray-40 |
+| `muted-foreground` | Muted text | Gray-30 | Gray-10 |
+| `accent` | Accent backgrounds | Gray-5 | Gray-30 |
+| `destructive` | Delete/error actions | Red | Red |
+| `border` | Borders | Gray-15 | Gray-35 |
+| `input` | Input backgrounds | Gray-5 | Gray-40 |
+| `ring` | Focus rings | Blue-30 | Blue-30-dm |
+
+<Warning>
+**Always use semantic tokens instead of arbitrary colors:**
+
+- ✅ `yv:bg-background`
+- ✅ `yv:text-muted-foreground`
+- ❌ `yv:bg-white`
+- ❌ `yv:text-gray-500`
+
+Semantic tokens ensure proper contrast and automatic theme adaptation.
+</Warning>
+
+## YouVersion Design System Colors
+
+The SDK includes the complete YouVersion design system color palette:
+
+<Tabs>
+  <Tab title="Brand Colors">
+    ```css
+    --yv-red: oklch(0.64 0.22 15);
+    --yv-red-dark-mode: oklch(0.68 0.19 15);
+    --yv-warm-neutral: oklch(0.96 0.005 20);
+    --yv-warm-neutral-dm: oklch(0.25 0.005 20);
+    ```
+  </Tab>
+  
+  <Tab title="Grayscale">
+    ```css
+    --yv-white: oklch(1 0 0);
+    --yv-gray-2: oklch(0.988 0.001 17.2);
+    --yv-gray-5: oklch(0.965 0.001 17.2);
+    --yv-gray-10: oklch(0.925 0.001 17.2);
+    --yv-gray-15: oklch(0.893 0.0022 17.2);
+    --yv-gray-20: oklch(0.788 0.001 17.2);
+    --yv-gray-25: oklch(0.588 0.001 17.2);
+    --yv-gray-30: oklch(0.478 0.001 17.2);
+    --yv-gray-35: oklch(0.378 0.001 17.2);
+    --yv-gray-40: oklch(0.298 0.001 17.2);
+    --yv-gray-45: oklch(0.218 0.001 17.2);
+    --yv-gray-48: oklch(0.178 0.001 17.2);
+    --yv-gray-50: oklch(0.138 0.001 17.2);
+    ```
+  </Tab>
+  
+  <Tab title="Expressive Colors">
+    ```css
+    /* Teal */
+    --yv-teal-10: oklch(0.95 0.01 195);
+    --yv-teal-30: oklch(0.52 0.06 195);
+    --yv-teal-30-dm: oklch(0.58 0.08 195);
+    --yv-teal-50: oklch(0.18 0.02 195);
+    
+    /* Blue */
+    --yv-blue-10: oklch(0.96 0.02 240);
+    --yv-blue-30: oklch(0.58 0.08 240);
+    --yv-blue-30-dm: oklch(0.62 0.12 240);
+    
+    /* Purple, Magenta, Orange, Yellow, Green */
+    /* ... and more */
+    ```
+  </Tab>
+</Tabs>
+
+All colors use **OKLCH color space** for perceptually uniform brightness across hues.
+
+## Dark Mode Implementation
+
+Dark mode is controlled by the `data-yv-theme` attribute:
+
+```tsx
+// Light mode
+<div data-yv-sdk data-yv-theme="light">
+  ...
+</div>
+
+// Dark mode
+<div data-yv-sdk data-yv-theme="dark">
+  ...
+</div>
+```
+
+The CSS automatically switches tokens:
+
+```css
+[data-yv-sdk] {
+  --yv-background: var(--yv-white);
+  --yv-foreground: var(--yv-gray-50);
+}
+
+[data-yv-sdk][data-yv-theme='dark'] {
+  --yv-background: var(--yv-gray-50);
+  --yv-foreground: var(--yv-white);
+}
+```
+
+### Custom Dark Mode Styles
+
+Use the `dark:` variant to apply dark-mode-specific styles:
+
+```css
+@custom-variant dark (&:is([data-yv-sdk][data-yv-theme='dark'] *));
+```
+
+In components:
+
+```tsx
+<div className="yv:bg-white dark:yv:bg-gray-900">
+  Custom dark mode styling
+</div>
+```
+
+## Typography
+
+The SDK includes two web fonts:
+
+```css
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Source+Serif+4:wght@400;700&display=swap');
+```
+
+**Available font families:**
+
+- `--yv-font-sans`: 'Inter', sans-serif (default)
+- `--yv-font-serif`: 'Source Serif 4', serif (for Bible text)
+
+Use them in components:
+
+```tsx
+<div className="yv:font-sans">
+  UI text in Inter
+</div>
+
+<div className="yv:font-serif">
+  Bible text in Source Serif 4
+</div>
+```
+
+## Customizing Component Styles
+
+### Using Background Prop
+
+Most components accept a `background` prop:
+
+```tsx
+<BibleReader.Root background="dark">
+  <BibleReader.Content />
+</BibleReader.Root>
+```
+
+This sets the `data-yv-theme` attribute on the component root.
+
+### Custom Styling with Tailwind
+
+You can add your own utility classes alongside SDK classes:
+
+```tsx
+import { BibleCard } from '@youversion/platform-react-ui';
+
+function CustomCard() {
+  return (
+    <div className="my-custom-wrapper">
+      <BibleCard
+        reference="JHN.3.16"
+        versionId={3034}
+        background="light"
+      />
+    </div>
+  );
+}
+```
+
+### Overriding SDK Styles
+
+Since SDK styles are scoped to `[data-yv-sdk]`, you can override them with higher specificity:
+
+```css
+/* Your app's CSS */
+.my-custom-bible-reader [data-yv-sdk] {
+  --yv-background: #f0f0f0;
+  --yv-foreground: #333;
+}
+```
+
+Or use inline styles:
+
+```tsx
+<div style={{ '--yv-background': '#f0f0f0' } as React.CSSProperties}>
+  <BibleReader.Root>...</BibleReader.Root>
+</div>
+```
+
+## CSS Variables Reference
+
+All theme variables are exposed as CSS custom properties:
+
+```css
+[data-yv-sdk] {
+  /* Semantic tokens */
+  --yv-background: var(--yv-white);
+  --yv-foreground: var(--yv-gray-50);
+  --yv-card: var(--yv-gray-2);
+  --yv-primary: var(--yv-gray-50);
+  --yv-border: var(--yv-gray-15);
+  
+  /* Radius */
+  --yv-radius: 2rem;
+  --radius-sm: calc(var(--yv-radius) - 4px);
+  --radius-md: calc(var(--yv-radius) - 2px);
+  --radius-lg: var(--yv-radius);
+  --radius-xl: calc(var(--yv-radius) + 4px);
+  
+  /* Fonts */
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: 'Source Serif 4', serif;
+}
+```
+
+Access these in your components:
+
+```tsx
+<div style={{ 
+  backgroundColor: 'var(--yv-background)',
+  color: 'var(--yv-foreground)',
+  borderRadius: 'var(--yv-radius)'
+}}>
+  Custom styled element
+</div>
+```
+
+## Preflight/Reset Styles
+
+The SDK includes a scoped version of Tailwind's Preflight (CSS reset):
+
+```css
+:where([data-yv-sdk]) {
+  *,
+  ::after,
+  ::before {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+  }
+  /* ... more reset styles */
+}
+```
+
+<Info>
+The `:where()` pseudo-class ensures these resets have **zero specificity**, so they won't override your app's styles. They only provide a baseline for SDK components.
+</Info>
+
+## Build Process
+
+The theming system is built in three steps:
+
+```bash
+pnpm build:css    # Tailwind CSS compilation
+pnpm build:js     # tsup bundling with style injection
+pnpm build:types  # TypeScript declarations
+```
+
+**What happens:**
+
+1. **build:css** - Tailwind compiles `src/styles/global.css` → `dist/tailwind.css`
+2. **build:js** - tsup reads `dist/tailwind.css` and injects it as `__YV_STYLES__` constant
+3. **On import** - `injectStyles()` creates a `<style>` tag with the embedded CSS
+
+```typescript
+// Simplified version of injectStyles()
+function injectStyles() {
+  if (typeof document === 'undefined') return;
+  
+  const styleId = 'yv-platform-sdk-styles';
+  if (document.getElementById(styleId)) return;
+  
+  const style = document.createElement('style');
+  style.id = styleId;
+  style.textContent = __YV_STYLES__; // Injected at build time
+  document.head.appendChild(style);
+}
+```
+
+## Accessibility
+
+The theming system ensures accessibility:
+
+- **Sufficient contrast** - All color combinations meet WCAG AA standards
+- **Focus indicators** - Visible focus rings using `--yv-ring`
+- **Semantic colors** - Destructive actions use red, success uses green
+- **High contrast mode** - Works with Windows High Contrast mode
+
+## Advanced Customization
+
+### Creating Custom Themes
+
+You can create completely custom themes by overriding CSS variables:
+
+```tsx
+function CustomThemedApp() {
+  return (
+    <div
+      data-yv-sdk
+      data-yv-theme="dark"
+      style={{
+        '--yv-background': '#1a1a2e',
+        '--yv-foreground': '#eee',
+        '--yv-primary': '#0f3460',
+        '--yv-accent': '#16213e',
+        '--yv-border': '#533483',
+      } as React.CSSProperties}
+    >
+      <BibleReader.Root versionId={3034} book="JHN" chapter="1">
+        <BibleReader.Content />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+### Component-Specific Styling
+
+Target specific components with CSS:
+
+```css
+/* Style all Bible readers */
+[data-yv-sdk] .bible-reader-root {
+  --yv-background: #fafafa;
+}
+
+/* Style verse numbers */
+[data-yv-sdk] .verse-number {
+  color: var(--yv-muted-foreground);
+  font-size: 0.875rem;
+}
+```
+
+## Troubleshooting
+
+### Styles Not Applying
+
+**Problem:** SDK styles don't appear
+
+**Solution:** Ensure you're importing from the UI package:
+
+```tsx
+// ✅ Correct - imports and injects styles
+import { BibleReader } from '@youversion/platform-react-ui';
+
+// ❌ Wrong - hooks don't include styles
+import { useChapter } from '@youversion/platform-react-hooks';
+```
+
+### Style Conflicts
+
+**Problem:** SDK styles conflict with your app's styles
+
+**Solution:** All SDK classes should use the `yv:` prefix. If conflicts occur:
+
+1. Check that SDK components have `data-yv-sdk` attribute
+2. Verify Tailwind config doesn't have overlapping prefixes
+3. Increase specificity of your app's styles if needed
+
+### Dark Mode Not Switching
+
+**Problem:** Theme doesn't change when toggled
+
+**Solution:** Ensure `theme` prop is passed to `YouVersionProvider`:
+
+```tsx
+<YouVersionProvider
+  appKey="your-app-key"
+  theme="dark"  // ← Required for dark mode
+>
+  <App />
+</YouVersionProvider>
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Components" icon="puzzle-piece" href="/api/ui/overview">
+    Explore all UI components and their styling options
+  </Card>
+  <Card title="Styling" icon="paintbrush" href="/guides/styling-components">
+    Learn advanced customization techniques
+  </Card>
+</CardGroup>

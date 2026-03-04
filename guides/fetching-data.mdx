@@ -1,0 +1,413 @@
+---
+title: "Fetching Data"
+description: "Learn how to fetch Bible data using React hooks from the YouVersion Platform SDK"
+---
+
+The YouVersion Platform React SDK provides a comprehensive set of hooks for fetching Bible content, metadata, and user data. All hooks follow a consistent pattern and are built on top of the core API clients.
+
+## Provider Setup
+
+Before using any hooks, wrap your app with `YouVersionProvider`:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+
+function App() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      theme="light"  // "light" or "dark"
+    >
+      <YourApp />
+    </YouVersionProvider>
+  );
+}
+```
+
+<Info>
+**Get an App Key**: Register your application at the [YouVersion Developer Portal](https://developers.youversion.com) to obtain an app key.
+</Info>
+
+## Hook Pattern
+
+All data fetching hooks return a consistent shape:
+
+```tsx
+const { data, loading, error, refetch } = useHook(params);
+```
+
+- **data**: The fetched data (null while loading or on error)
+- **loading**: Boolean indicating if the request is in progress
+- **error**: Error object if the request failed (null otherwise)
+- **refetch**: Function to manually trigger a refetch
+
+## Fetching Passages
+
+The `usePassage` hook fetches a Bible passage by reference:
+
+```tsx
+import { usePassage } from '@youversion/platform-react-hooks';
+
+function PassageDisplay() {
+  const { passage, loading, error, refetch } = usePassage({
+    versionId: 3034,           // Bible version ID
+    usfm: 'JHN.3.16',         // USFM reference
+    format: 'html',            // 'html' or 'text'
+    include_headings: true,    // Include section headings
+    include_notes: true,       // Include footnotes
+  });
+
+  if (loading) return <div>Loading passage...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      <h2>{passage?.reference}</h2>
+      <div dangerouslySetInnerHTML={{ __html: passage?.content || '' }} />
+    </div>
+  );
+}
+```
+
+### Conditional Fetching
+
+Use the `enabled` option to control when the hook fetches data:
+
+```tsx
+const { passage, loading } = usePassage({
+  versionId: selectedVersion,
+  usfm: 'JHN.3.16',
+  options: {
+    enabled: selectedVersion !== null,  // Only fetch when version is selected
+  },
+});
+```
+
+## Fetching Bible Versions
+
+The `useVersions` hook fetches available Bible versions:
+
+```tsx
+import { useVersions } from '@youversion/platform-react-hooks';
+
+function VersionSelector() {
+  const { versions, loading, error } = useVersions(
+    'en',        // Language code(s) - string or array
+    undefined,   // Optional license ID
+    {
+      page_size: 50,           // Number of results per page
+      all_available: true,     // Include all available versions
+    }
+  );
+
+  if (loading) return <div>Loading versions...</div>;
+  if (error) return <div>Error loading versions</div>;
+
+  return (
+    <select>
+      {versions?.data.map(version => (
+        <option key={version.id} value={version.id}>
+          {version.title} ({version.localized_abbreviation})
+        </option>
+      ))}
+    </select>
+  );
+}
+```
+
+### Multiple Languages
+
+```tsx
+const { versions } = useVersions(
+  ['en', 'es', 'fr'],  // English, Spanish, French
+  undefined,
+  { all_available: true }
+);
+```
+
+## Fetching a Single Version
+
+The `useVersion` hook fetches metadata for a specific version:
+
+```tsx
+import { useVersion } from '@youversion/platform-react-hooks';
+
+function VersionInfo({ versionId }: { versionId: number }) {
+  const { version, loading } = useVersion(versionId);
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h3>{version?.title}</h3>
+      <p>{version?.localized_abbreviation}</p>
+      <p>{version?.copyright}</p>
+    </div>
+  );
+}
+```
+
+## Fetching Books
+
+The `useBooks` hook fetches all books in a Bible version:
+
+```tsx
+import { useBooks } from '@youversion/platform-react-hooks';
+
+function BookList({ versionId }: { versionId: number }) {
+  const { books, loading, error } = useBooks(versionId);
+
+  if (loading) return <div>Loading books...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <ul>
+      {books?.data.map(book => (
+        <li key={book.id}>
+          {book.title} ({book.id})
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Verse of the Day
+
+The `useVerseOfTheDay` hook fetches the daily verse:
+
+```tsx
+import { useVerseOfTheDay, getDayOfYear } from '@youversion/platform-react-hooks';
+
+function DailyVerse() {
+  const day = getDayOfYear(new Date());  // Current day of year (1-366)
+  const { data: votd, loading, refetch } = useVerseOfTheDay(day);
+
+  if (loading) return <div>Loading verse of the day...</div>;
+
+  return (
+    <div>
+      <h3>Verse of the Day</h3>
+      <p>{votd?.verse.text}</p>
+      <p>{votd?.verse.reference}</p>
+      <button onClick={refetch}>Refresh</button>
+    </div>
+  );
+}
+```
+
+## Fetching Languages
+
+The `useLanguages` hook fetches available Bible languages:
+
+```tsx
+import { useLanguages } from '@youversion/platform-react-hooks';
+
+function LanguageSelector() {
+  const { languages, loading } = useLanguages();
+
+  if (loading) return <div>Loading languages...</div>;
+
+  return (
+    <select>
+      {languages?.data.map(lang => (
+        <option key={lang.id} value={lang.id}>
+          {lang.name_local}
+        </option>
+      ))}
+    </select>
+  );
+}
+```
+
+## Filtered Versions
+
+The `useFilteredVersions` hook provides advanced filtering:
+
+```tsx
+import { useFilteredVersions } from '@youversion/platform-react-hooks';
+
+function FilteredVersions() {
+  const {
+    filteredVersions,
+    recentVersions,
+    searchQuery,
+    setSearchQuery,
+    selectedLanguage,
+    setSelectedLanguage,
+  } = useFilteredVersions('en');
+
+  return (
+    <div>
+      <input
+        type="text"
+        placeholder="Search versions..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
+
+      <h4>Recent</h4>
+      <ul>
+        {recentVersions.map(version => (
+          <li key={version.id}>{version.title}</li>
+        ))}
+      </ul>
+
+      <h4>All Versions</h4>
+      <ul>
+        {filteredVersions.map(version => (
+          <li key={version.id}>{version.title}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+## Accessing API Clients
+
+For advanced use cases, access the underlying API clients:
+
+```tsx
+import { useBibleClient } from '@youversion/platform-react-hooks';
+
+function AdvancedComponent() {
+  const bibleClient = useBibleClient();
+
+  const fetchCustomData = async () => {
+    // Direct API client access
+    const passage = await bibleClient.getPassage(
+      3034,
+      'JHN.3.16',
+      'html',
+      true,
+      true
+    );
+    console.log(passage);
+  };
+
+  return <button onClick={fetchCustomData}>Fetch</button>;
+}
+```
+
+## Error Handling
+
+Handle errors gracefully across your app:
+
+```tsx
+import { usePassage } from '@youversion/platform-react-hooks';
+
+function RobustPassageDisplay() {
+  const { passage, loading, error, refetch } = usePassage({
+    versionId: 3034,
+    usfm: 'JHN.3.16',
+  });
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div>
+        <p>Failed to load passage: {error.message}</p>
+        <button onClick={refetch}>Try Again</button>
+      </div>
+    );
+  }
+
+  return <div>{passage?.content}</div>;
+}
+```
+
+## Performance: Manual Refetching
+
+All hooks provide a `refetch` function for manual data updates:
+
+```tsx
+function RefetchExample() {
+  const { passage, loading, refetch } = usePassage({
+    versionId: 3034,
+    usfm: 'JHN.3.16',
+  });
+
+  return (
+    <div>
+      <div>{passage?.content}</div>
+      <button onClick={refetch} disabled={loading}>
+        {loading ? 'Refreshing...' : 'Refresh'}
+      </button>
+    </div>
+  );
+}
+```
+
+## Complete Example
+
+Here's a complete component combining multiple hooks:
+
+```tsx
+import { useState } from 'react';
+import {
+  usePassage,
+  useVersion,
+  useBooks,
+} from '@youversion/platform-react-hooks';
+
+function CompleteBibleViewer() {
+  const [versionId, setVersionId] = useState(3034);
+  const [book, setBook] = useState('JHN');
+  const [chapter, setChapter] = useState('3');
+
+  const { version } = useVersion(versionId);
+  const { books } = useBooks(versionId);
+  const { passage, loading, error } = usePassage({
+    versionId,
+    usfm: `${book}.${chapter}`,
+    include_headings: true,
+    include_notes: true,
+  });
+
+  return (
+    <div>
+      {/* Version Info */}
+      <h2>{version?.title}</h2>
+
+      {/* Book Selector */}
+      <select value={book} onChange={e => setBook(e.target.value)}>
+        {books?.data.map(b => (
+          <option key={b.id} value={b.id}>{b.title}</option>
+        ))}
+      </select>
+
+      {/* Chapter Input */}
+      <input
+        type="number"
+        value={chapter}
+        onChange={e => setChapter(e.target.value)}
+      />
+
+      {/* Passage Display */}
+      {loading && <p>Loading...</p>}
+      {error && <p>Error: {error.message}</p>}
+      {passage && (
+        <div>
+          <h3>{passage.reference}</h3>
+          <div dangerouslySetInnerHTML={{ __html: passage.content }} />
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Displaying Bible Text" icon="book" href="/guides/displaying-bible-text">
+    Learn how to render Bible passages
+  </Card>
+  <Card title="User Authentication" icon="lock" href="/guides/user-authentication">
+    Implement YouVersion authentication
+  </Card>
+</CardGroup>

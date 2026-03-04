@@ -1,0 +1,494 @@
+---
+title: "User Authentication"
+description: "Implement YouVersion authentication to access user data and personalized features"
+---
+
+The YouVersion Platform SDK provides secure OAuth 2.0 authentication using PKCE (Proof Key for Code Exchange). This enables users to sign in with their YouVersion account and access personalized features.
+
+## Why Authentication?
+
+With authentication, your app can:
+
+- Access user profile information (name, avatar)
+- Read and write user highlights and bookmarks
+- Personalize the reading experience
+- Sync user data across devices
+
+## Setup
+
+### Step 1: Register Your App
+
+First, register your application at the [YouVersion Developer Portal](https://developers.youversion.com) to obtain:
+
+- **App Key**: Your application identifier
+- **Redirect URI**: Where users return after authentication
+
+### Step 2: Configure the Provider
+
+Wrap your app with `YouVersionProvider` and enable authentication:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+
+function App() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      includeAuth={true}
+      authRedirectUrl="https://yourapp.com/callback"
+    >
+      <YourApp />
+    </YouVersionProvider>
+  );
+}
+```
+
+<Info>
+The `authRedirectUrl` must match exactly what you registered in the Developer Portal, including the protocol (http/https) and path.
+</Info>
+
+## Using the useYVAuth Hook
+
+The `useYVAuth` hook provides complete authentication functionality:
+
+```tsx
+import { useYVAuth } from '@youversion/platform-react-hooks';
+
+function AuthExample() {
+  const { auth, userInfo, signIn, signOut } = useYVAuth();
+
+  // Check authentication state
+  if (auth.isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!auth.isAuthenticated) {
+    return (
+      <button onClick={() => signIn()}>
+        Sign In with YouVersion
+      </button>
+    );
+  }
+
+  // User is authenticated
+  return (
+    <div>
+      <p>Welcome, {userInfo?.name}!</p>
+      <img src={userInfo?.getAvatarUrl(64, 64)} alt="Avatar" />
+      <button onClick={signOut}>Sign Out</button>
+    </div>
+  );
+}
+```
+
+## Authentication Flow
+
+### Step 1: Sign In
+
+Initiate the sign-in flow:
+
+```tsx
+import { useYVAuth } from '@youversion/platform-react-hooks';
+
+function SignInButton() {
+  const { signIn, auth } = useYVAuth();
+
+  const handleSignIn = async () => {
+    try {
+      await signIn({
+        redirectUrl: 'https://yourapp.com/callback',
+        scopes: ['profile'],  // Optional: specify required scopes
+      });
+      // User will be redirected to YouVersion for authentication
+    } catch (error) {
+      console.error('Sign in failed:', error);
+    }
+  };
+
+  return (
+    <button onClick={handleSignIn} disabled={auth.isLoading}>
+      {auth.isLoading ? 'Signing in...' : 'Sign In'}
+    </button>
+  );
+}
+```
+
+### Step 2: Handle the Callback
+
+Create a callback page to process the authentication response:
+
+```tsx
+// app/callback/page.tsx (Next.js example)
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useYVAuth } from '@youversion/platform-react-hooks';
+
+export default function CallbackPage() {
+  const router = useRouter();
+  const { processCallback } = useYVAuth();
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleCallback = async () => {
+      try {
+        const result = await processCallback();
+        if (result) {
+          console.log('Authentication successful:', result.name);
+          // Redirect to main app
+          router.push('/');
+        } else {
+          setError('Authentication failed');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      }
+    };
+
+    handleCallback();
+  }, [processCallback, router]);
+
+  if (error) {
+    return (
+      <div>
+        <h2>Authentication Error</h2>
+        <p>{error}</p>
+        <a href="/">Return to home</a>
+      </div>
+    );
+  }
+
+  return <div>Completing sign in...</div>;
+}
+```
+
+### Step 3: Sign Out
+
+Clear the user session:
+
+```tsx
+function SignOutButton() {
+  const { signOut } = useYVAuth();
+
+  return (
+    <button onClick={signOut}>
+      Sign Out
+    </button>
+  );
+}
+```
+
+## Accessing User Information
+
+The `userInfo` object provides:
+
+```tsx
+import { useYVAuth } from '@youversion/platform-react-hooks';
+
+function UserProfile() {
+  const { userInfo, auth } = useYVAuth();
+
+  if (!auth.isAuthenticated || !userInfo) {
+    return <div>Please sign in</div>;
+  }
+
+  return (
+    <div>
+      {/* Basic Info */}
+      <h2>{userInfo.name}</h2>
+      <p>User ID: {userInfo.id}</p>
+
+      {/* Avatar with specific size */}
+      <img
+        src={userInfo.getAvatarUrl(128, 128)}
+        alt={`${userInfo.name}'s avatar`}
+        width={128}
+        height={128}
+      />
+
+      {/* Multiple avatar sizes */}
+      <div>
+        <img src={userInfo.getAvatarUrl(32, 32)} alt="Small" />
+        <img src={userInfo.getAvatarUrl(64, 64)} alt="Medium" />
+        <img src={userInfo.getAvatarUrl(256, 256)} alt="Large" />
+      </div>
+    </div>
+  );
+}
+```
+
+## Authentication Scopes
+
+Request specific permissions with scopes:
+
+```tsx
+// Request profile access
+await signIn({
+  scopes: ['profile'],
+});
+
+// Request multiple scopes
+await signIn({
+  scopes: ['profile', 'highlights'],
+});
+```
+
+### Available Scopes
+
+- **profile**: Basic user information (name, avatar)
+- **highlights**: Read/write user highlights
+- **bookmarks**: Read/write user bookmarks
+
+<Note>
+The `openid` scope is automatically included and doesn't need to be specified.
+</Note>
+
+## Protected Routes
+
+Protect routes that require authentication:
+
+```tsx
+import { useYVAuth } from '@youversion/platform-react-hooks';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { auth } = useYVAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!auth.isLoading && !auth.isAuthenticated) {
+      router.push('/sign-in');
+    }
+  }, [auth.isLoading, auth.isAuthenticated, router]);
+
+  if (auth.isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!auth.isAuthenticated) {
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+// Usage
+function HighlightsPage() {
+  return (
+    <ProtectedRoute>
+      <MyHighlights />
+    </ProtectedRoute>
+  );
+}
+```
+
+## Error Handling
+
+Handle authentication errors gracefully:
+
+```tsx
+import { useYVAuth } from '@youversion/platform-react-hooks';
+
+function RobustAuth() {
+  const { auth, signIn } = useYVAuth();
+
+  const handleSignIn = async () => {
+    try {
+      await signIn();
+    } catch (error) {
+      if (error instanceof Error) {
+        // Handle specific error types
+        if (error.message.includes('redirectUrl')) {
+          console.error('Configuration error:', error.message);
+        } else {
+          console.error('Authentication error:', error.message);
+        }
+      }
+    }
+  };
+
+  if (auth.error) {
+    return (
+      <div>
+        <p>Authentication error: {auth.error.message}</p>
+        <button onClick={handleSignIn}>Try Again</button>
+      </div>
+    );
+  }
+
+  return <button onClick={handleSignIn}>Sign In</button>;
+}
+```
+
+## Complete Example
+
+Here's a full authentication implementation:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+import { useYVAuth } from '@youversion/platform-react-hooks';
+
+// Main App
+function App() {
+  return (
+    <YouVersionProvider
+      appKey={process.env.NEXT_PUBLIC_YVP_APP_KEY!}
+      includeAuth={true}
+      authRedirectUrl={process.env.NEXT_PUBLIC_REDIRECT_URI!}
+    >
+      <AuthAwareApp />
+    </YouVersionProvider>
+  );
+}
+
+// Authentication-aware component
+function AuthAwareApp() {
+  const { auth, userInfo, signIn, signOut } = useYVAuth();
+
+  if (auth.isLoading) {
+    return (
+      <div className="loading">
+        <h2>Loading...</h2>
+      </div>
+    );
+  }
+
+  if (!auth.isAuthenticated) {
+    return (
+      <div className="sign-in">
+        <h1>Welcome</h1>
+        <button onClick={() => signIn({ scopes: ['profile'] })}>
+          Sign In with YouVersion
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+      <header>
+        <div className="user-info">
+          <img
+            src={userInfo?.getAvatarUrl(40, 40)}
+            alt="Avatar"
+            className="avatar"
+          />
+          <span>{userInfo?.name}</span>
+        </div>
+        <button onClick={signOut}>Sign Out</button>
+      </header>
+
+      <main>
+        {/* Your app content */}
+      </main>
+    </div>
+  );
+}
+```
+
+## Using with BibleReader
+
+The `BibleReader` component automatically shows authentication UI when enabled:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function BibleApp() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      includeAuth={true}  // Enables auth UI in BibleReader
+      authRedirectUrl="https://yourapp.com/callback"
+    >
+      <div style={{ height: '100vh' }}>
+        <BibleReader.Root defaultBook="JHN" defaultChapter="3" defaultVersionId={3034}>
+          <BibleReader.Content />
+          <BibleReader.Toolbar />
+          {/* User menu appears automatically when includeAuth is true */}
+        </BibleReader.Root>
+      </div>
+    </YouVersionProvider>
+  );
+}
+```
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Store App Key Securely">
+    Never commit your app key to version control. Use environment variables:
+
+    ```bash
+    # .env.local
+    NEXT_PUBLIC_YVP_APP_KEY=your-app-key-here
+    NEXT_PUBLIC_REDIRECT_URI=https://yourapp.com/callback
+    ```
+  </Accordion>
+
+  <Accordion title="Use HTTPS in Production">
+    Always use HTTPS for your redirect URI in production:
+
+    ```tsx
+    // ✅ Good
+    authRedirectUrl="https://yourapp.com/callback"
+
+    // ❌ Bad (production)
+    authRedirectUrl="http://yourapp.com/callback"
+
+    // ✅ OK (local development)
+    authRedirectUrl="http://localhost:3000/callback"
+    ```
+  </Accordion>
+
+  <Accordion title="Validate Tokens">
+    The SDK handles token validation automatically, but be aware:
+
+    - Access tokens expire after a period
+    - The SDK refreshes tokens automatically
+    - Sign out clears all tokens from storage
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+### "redirectUrl is required" Error
+
+Make sure you provide `authRedirectUrl` to the provider or `redirectUrl` to `signIn()`:
+
+```tsx
+// Option 1: Provider-level (recommended)
+<YouVersionProvider authRedirectUrl="https://yourapp.com/callback" />
+
+// Option 2: Per sign-in
+await signIn({ redirectUrl: 'https://yourapp.com/callback' });
+```
+
+### Callback Not Working
+
+Verify:
+
+1. Redirect URI matches exactly (including trailing slashes)
+2. URI is registered in Developer Portal
+3. Callback page calls `processCallback()`
+
+### User Info Not Available
+
+Ensure:
+
+1. User has completed the callback flow
+2. `processCallback()` has been called
+3. `includeAuth={true}` in provider
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Fetching Data" icon="database" href="/guides/fetching-data">
+    Learn about data fetching hooks
+  </Card>
+  <Card title="Building a Reader" icon="book-open" href="/guides/building-a-reader">
+    Create a complete reading experience
+  </Card>
+</CardGroup>

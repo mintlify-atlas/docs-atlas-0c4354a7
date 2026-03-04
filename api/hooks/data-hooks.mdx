@@ -1,0 +1,733 @@
+---
+title: Data Hooks
+description: Hooks for fetching Bible content, versions, languages, and highlights
+---
+
+Data hooks provide a consistent interface for fetching and managing data from the YouVersion Platform API. All hooks follow the `useApiData` pattern and return `{ data, loading, error, refetch }`.
+
+## Bible Content Hooks
+
+### useVersion
+
+Fetches metadata for a specific Bible version.
+
+<ParamField path="versionId" type="number" required>
+  The Bible version ID (e.g., 1 for KJV, 3034 for BSB)
+</ParamField>
+
+<ParamField path="options" type="UseApiDataOptions">
+  Optional configuration object with `enabled` boolean
+</ParamField>
+
+<ResponseField name="version" type="BibleVersion | null">
+  Bible version metadata including title, abbreviation, language, and more
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  True while data is being fetched
+</ResponseField>
+
+<ResponseField name="error" type="Error | null">
+  Error object if the request failed
+</ResponseField>
+
+<ResponseField name="refetch" type="() => void">
+  Function to manually refetch the data
+</ResponseField>
+
+#### Usage
+
+```tsx
+import { useVersion } from '@youversion/platform-react-hooks';
+
+function VersionInfo({ versionId }) {
+  const { version, loading, error } = useVersion(versionId);
+  
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  
+  return (
+    <div>
+      <h2>{version?.title}</h2>
+      <p>{version?.abbreviation} - {version?.language.name}</p>
+    </div>
+  );
+}
+```
+
+---
+
+### useVersions
+
+Fetches a list of Bible versions, optionally filtered by language and license.
+
+<ParamField path="languageRanges" type="string | string[]" default="en">
+  Language code(s) to filter by (e.g., 'en', ['en', 'es'])
+</ParamField>
+
+<ParamField path="licenseId" type="string | number">
+  Optional license ID to filter versions
+</ParamField>
+
+<ParamField path="options" type="UseVersionsOptions">
+  Configuration object for pagination, field selection, and fetching behavior
+</ParamField>
+
+#### Options
+
+<ParamField path="options.page_size" type="number | '*'">
+  Maximum results per page, or '*' for all (requires 1-3 fields when using '*')
+</ParamField>
+
+<ParamField path="options.page_token" type="string">
+  Token for pagination
+</ParamField>
+
+<ParamField path="options.fields" type="(keyof BibleVersion)[]">
+  Specific fields to return (required when page_size is '*')
+</ParamField>
+
+<ParamField path="options.all_available" type="boolean">
+  Include all available versions regardless of license
+</ParamField>
+
+<ParamField path="options.enabled" type="boolean">
+  Enable/disable automatic fetching
+</ParamField>
+
+#### Returns
+
+<ResponseField name="versions" type="Collection<BibleVersion> | null">
+  Collection of Bible versions with pagination metadata
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  Loading state
+</ResponseField>
+
+<ResponseField name="error" type="Error | null">
+  Error if request failed
+</ResponseField>
+
+<ResponseField name="refetch" type="() => void">
+  Refetch function
+</ResponseField>
+
+#### Usage
+
+<CodeGroup>
+```tsx Basic
+import { useVersions } from '@youversion/platform-react-hooks';
+
+function VersionList() {
+  const { versions, loading } = useVersions('en');
+  
+  if (loading) return <div>Loading...</div>;
+  
+  return (
+    <ul>
+      {versions?.data.map(v => (
+        <li key={v.id}>{v.title}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+```tsx With Pagination
+function VersionListPaginated() {
+  const [pageToken, setPageToken] = useState<string>();
+  
+  const { versions, loading } = useVersions('en', undefined, {
+    page_size: 20,
+    page_token: pageToken,
+  });
+  
+  return (
+    <div>
+      <ul>
+        {versions?.data.map(v => <li key={v.id}>{v.title}</li>)}
+      </ul>
+      {versions?.next_page_token && (
+        <button onClick={() => setPageToken(versions.next_page_token)}>
+          Load More
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+```tsx Multiple Languages
+function MultiLangVersions() {
+  const { versions, loading } = useVersions(['en', 'es', 'fr']);
+  
+  // Returns versions in English, Spanish, and French
+  return <VersionList versions={versions} />;
+}
+```
+</CodeGroup>
+
+---
+
+### useBook
+
+Fetches metadata for a specific book within a Bible version.
+
+<ParamField path="versionId" type="number" required>
+  Bible version ID
+</ParamField>
+
+<ParamField path="book" type="string" required>
+  USFM book abbreviation (e.g., 'GEN', 'JHN', 'PSA')
+</ParamField>
+
+<ParamField path="options" type="UseApiDataOptions">
+  Optional configuration
+</ParamField>
+
+#### Returns
+
+<ResponseField name="book" type="BibleBook | null">
+  Book metadata including chapters, human reference, and intro
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">Loading state</ResponseField>
+<ResponseField name="error" type="Error | null">Error state</ResponseField>
+<ResponseField name="refetch" type="() => void">Refetch function</ResponseField>
+
+#### Usage
+
+```tsx
+import { useBook } from '@youversion/platform-react-hooks';
+
+function BookInfo({ versionId, bookId }) {
+  const { book, loading } = useBook(versionId, bookId);
+  
+  if (loading) return <div>Loading...</div>;
+  
+  return (
+    <div>
+      <h2>{book?.human_reference}</h2>
+      <p>{book?.chapters?.length} chapters</p>
+    </div>
+  );
+}
+```
+
+---
+
+### useBooks
+
+Fetches all books for a specific Bible version.
+
+<ParamField path="versionId" type="number" required>
+  Bible version ID
+</ParamField>
+
+<ParamField path="options" type="UseApiDataOptions">
+  Optional configuration
+</ParamField>
+
+#### Returns
+
+<ResponseField name="books" type="Collection<BibleBook> | null">
+  Collection of all books in the version
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">Loading state</ResponseField>
+<ResponseField name="error" type="Error | null">Error state</ResponseField>
+<ResponseField name="refetch" type="() => void">Refetch function</ResponseField>
+
+#### Usage
+
+```tsx
+import { useBooks } from '@youversion/platform-react-hooks';
+
+function TableOfContents({ versionId }) {
+  const { books, loading } = useBooks(versionId);
+  
+  if (loading) return <div>Loading...</div>;
+  
+  return (
+    <nav>
+      {books?.data.map(book => (
+        <a key={book.id} href={`/bible/${book.id}`}>
+          {book.human_reference}
+        </a>
+      ))}
+    </nav>
+  );
+}
+```
+
+---
+
+### useChapter
+
+Fetches a specific chapter's content.
+
+<ParamField path="versionId" type="number" required>
+  Bible version ID
+</ParamField>
+
+<ParamField path="book" type="string" required>
+  USFM book abbreviation
+</ParamField>
+
+<ParamField path="chapter" type="number" required>
+  Chapter number
+</ParamField>
+
+<ParamField path="options" type="UseApiDataOptions">
+  Optional configuration
+</ParamField>
+
+#### Returns
+
+<ResponseField name="chapter" type="BibleChapter | null">
+  Chapter content and metadata
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">Loading state</ResponseField>
+<ResponseField name="error" type="Error | null">Error state</ResponseField>
+<ResponseField name="refetch" type="() => void">Refetch function</ResponseField>
+
+#### Usage
+
+```tsx
+import { useChapter } from '@youversion/platform-react-hooks';
+
+function ChapterView() {
+  const { chapter, loading, error } = useChapter(1, 'JHN', 3);
+  
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  
+  return <div dangerouslySetInnerHTML={{ __html: chapter?.content }} />;
+}
+```
+
+---
+
+### useVerse
+
+Fetches a specific verse.
+
+<ParamField path="versionId" type="number" required>
+  Bible version ID
+</ParamField>
+
+<ParamField path="book" type="string" required>
+  USFM book abbreviation
+</ParamField>
+
+<ParamField path="chapter" type="number" required>
+  Chapter number
+</ParamField>
+
+<ParamField path="verse" type="number" required>
+  Verse number
+</ParamField>
+
+<ParamField path="options" type="UseApiDataOptions">
+  Optional configuration
+</ParamField>
+
+#### Returns
+
+<ResponseField name="verse" type="BibleVerse | null">
+  Verse content and metadata
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">Loading state</ResponseField>
+<ResponseField name="error" type="Error | null">Error state</ResponseField>
+<ResponseField name="refetch" type="() => void">Refetch function</ResponseField>
+
+#### Usage
+
+```tsx
+import { useVerse } from '@youversion/platform-react-hooks';
+
+function SingleVerse() {
+  const { verse, loading } = useVerse(1, 'JHN', 3, 16);
+  
+  if (loading) return <div>Loading...</div>;
+  
+  return <p>{verse?.text}</p>;
+}
+```
+
+---
+
+### usePassage
+
+Fetches a passage using USFM notation (supports ranges like "JHN.3.16-18").
+
+<ParamField path="versionId" type="number" required>
+  Bible version ID
+</ParamField>
+
+<ParamField path="usfm" type="string" required>
+  USFM passage identifier (e.g., 'JHN.3.16', 'JHN.3.16-18')
+</ParamField>
+
+<ParamField path="format" type="'html' | 'text'" default="html">
+  Content format
+</ParamField>
+
+<ParamField path="include_headings" type="boolean" default={false}>
+  Include section headings
+</ParamField>
+
+<ParamField path="include_notes" type="boolean" default={false}>
+  Include footnotes
+</ParamField>
+
+<ParamField path="options" type="UseApiDataOptions">
+  Optional configuration
+</ParamField>
+
+#### Returns
+
+<ResponseField name="passage" type="BiblePassage | null">
+  Passage content and metadata
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">Loading state</ResponseField>
+<ResponseField name="error" type="Error | null">Error state</ResponseField>
+<ResponseField name="refetch" type="() => void">Refetch function</ResponseField>
+
+#### Usage
+
+<CodeGroup>
+```tsx Single Verse
+import { usePassage } from '@youversion/platform-react-hooks';
+
+function PassageView() {
+  const { passage, loading } = usePassage({
+    versionId: 1,
+    usfm: 'JHN.3.16',
+  });
+  
+  if (loading) return <div>Loading...</div>;
+  
+  return <div dangerouslySetInnerHTML={{ __html: passage?.content }} />;
+}
+```
+
+```tsx Verse Range
+function PassageRange() {
+  const { passage, loading } = usePassage({
+    versionId: 1,
+    usfm: 'JHN.3.16-18',
+    include_headings: true,
+  });
+  
+  return <div dangerouslySetInnerHTML={{ __html: passage?.content }} />;
+}
+```
+
+```tsx Plain Text
+function PlainTextPassage() {
+  const { passage, loading } = usePassage({
+    versionId: 1,
+    usfm: 'PSA.23',
+    format: 'text',
+  });
+  
+  return <pre>{passage?.content}</pre>;
+}
+```
+</CodeGroup>
+
+---
+
+### useVOTD
+
+Fetches the Verse of the Day for a specific day of the year.
+
+<ParamField path="day" type="number" required>
+  Day of year (1-366). Use the `getDayOfYear` utility to calculate from a Date.
+</ParamField>
+
+<ParamField path="options" type="UseApiDataOptions">
+  Optional configuration
+</ParamField>
+
+#### Returns
+
+<ResponseField name="data" type="VOTD | null">
+  Verse of the Day including verse content, reference, and image
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">Loading state</ResponseField>
+<ResponseField name="error" type="Error | null">Error state</ResponseField>
+<ResponseField name="refetch" type="() => void">Refetch function</ResponseField>
+
+#### Usage
+
+<CodeGroup>
+```tsx Today's Verse
+import { useVOTD, getDayOfYear } from '@youversion/platform-react-hooks';
+
+function DailyVerse() {
+  const today = getDayOfYear(new Date());
+  const { data: votd, loading, refetch } = useVOTD(today);
+  
+  if (loading) return <div>Loading...</div>;
+  
+  return (
+    <div>
+      <p>{votd?.verse.text}</p>
+      <small>{votd?.verse.reference}</small>
+      <button onClick={refetch}>Refresh</button>
+    </div>
+  );
+}
+```
+
+```tsx Specific Date
+function HistoricalVerse() {
+  const christmas = getDayOfYear(new Date(2024, 11, 25));
+  const { data: votd } = useVOTD(christmas);
+  
+  return (
+    <div>
+      <h3>Christmas 2024 Verse</h3>
+      <p>{votd?.verse.text}</p>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+---
+
+## Language Hooks
+
+### useLanguages
+
+Fetches available languages with optional filtering and pagination.
+
+<ParamField path="options" type="GetLanguagesOptions" default={{}}>
+  Query options for filtering and pagination
+</ParamField>
+
+<ParamField path="apiOptions" type="UseApiDataOptions">
+  Hook configuration (enable/disable fetching)
+</ParamField>
+
+#### Options
+
+<ParamField path="options.fields" type="(keyof Language)[]">
+  Specific fields to return
+</ParamField>
+
+<ParamField path="options.country" type="string">
+  Filter by country code
+</ParamField>
+
+<ParamField path="options.page_size" type="number">
+  Results per page
+</ParamField>
+
+<ParamField path="options.page_token" type="string">
+  Pagination token
+</ParamField>
+
+#### Returns
+
+<ResponseField name="languages" type="Collection<Language> | null">
+  Collection of languages with pagination metadata
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">Loading state</ResponseField>
+<ResponseField name="error" type="Error | null">Error state</ResponseField>
+<ResponseField name="refetch" type="() => void">Refetch function</ResponseField>
+
+#### Usage
+
+```tsx
+import { useLanguages } from '@youversion/platform-react-hooks';
+
+function LanguageSelector() {
+  const { languages, loading } = useLanguages();
+  
+  if (loading) return <div>Loading...</div>;
+  
+  return (
+    <select>
+      {languages?.data.map(lang => (
+        <option key={lang.id} value={lang.id}>
+          {lang.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+```
+
+---
+
+## Highlight Hooks
+
+### useHighlights
+
+Fetches, creates, and deletes user highlights (requires authentication).
+
+<ParamField path="options" type="GetHighlightsOptions">
+  Query options for filtering highlights
+</ParamField>
+
+<ParamField path="apiOptions" type="UseApiDataOptions">
+  Hook configuration
+</ParamField>
+
+#### Options
+
+<ParamField path="options.version_id" type="number">
+  Filter by version ID
+</ParamField>
+
+<ParamField path="options.passage_id" type="string">
+  Filter by passage ID
+</ParamField>
+
+#### Returns
+
+<ResponseField name="highlights" type="Collection<Highlight> | null">
+  User's highlights
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">Loading state</ResponseField>
+<ResponseField name="error" type="Error | null">Error state</ResponseField>
+<ResponseField name="refetch" type="() => void">Refetch function</ResponseField>
+
+<ResponseField name="createHighlight" type="(data: CreateHighlight) => Promise<Highlight>">
+  Create a new highlight
+</ResponseField>
+
+<ResponseField name="deleteHighlight" type="(passageId: string, options?: DeleteHighlightOptions) => Promise<void>">
+  Delete a highlight
+</ResponseField>
+
+#### Usage
+
+```tsx
+import { useHighlights } from '@youversion/platform-react-hooks';
+
+function HighlightManager({ versionId }) {
+  const { 
+    highlights, 
+    loading, 
+    createHighlight, 
+    deleteHighlight 
+  } = useHighlights({ version_id: versionId });
+  
+  const handleCreate = async () => {
+    await createHighlight({
+      passage_id: 'JHN.3.16',
+      version_id: versionId,
+      color: 'yellow',
+    });
+  };
+  
+  const handleDelete = async (passageId: string) => {
+    await deleteHighlight(passageId);
+  };
+  
+  if (loading) return <div>Loading...</div>;
+  
+  return (
+    <div>
+      <button onClick={handleCreate}>Highlight Verse</button>
+      <ul>
+        {highlights?.data.map(h => (
+          <li key={h.passage_id}>
+            {h.passage_id}
+            <button onClick={() => handleDelete(h.passage_id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+---
+
+## Client Hooks
+
+### useBibleClient
+
+Returns a configured BibleClient instance. Used internally by data hooks.
+
+#### Returns
+
+<ResponseField name="bibleClient" type="BibleClient">
+  Configured Bible API client
+</ResponseField>
+
+#### Usage
+
+```tsx
+import { useBibleClient } from '@youversion/platform-react-hooks';
+
+function CustomDataFetcher() {
+  const client = useBibleClient();
+  
+  // Use client for custom API calls
+  const fetchCustomData = async () => {
+    const version = await client.getVersion(1);
+    // ...
+  };
+  
+  // ...
+}
+```
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use conditional fetching to avoid unnecessary requests">
+    ```tsx
+    // ✅ Good - only fetches when IDs are valid
+    const { chapter } = useChapter(versionId, book, chapterNum, {
+      enabled: Boolean(versionId && book && chapterNum),
+    });
+    
+    // ❌ Bad - fetches even with invalid params
+    const { chapter } = useChapter(0, '', 0);
+    ```
+  </Accordion>
+  
+  <Accordion title="Handle all states for better UX">
+    ```tsx
+    const { version, loading, error } = useVersion(versionId);
+    
+    if (loading) return <Spinner />;
+    if (error) return <ErrorMessage error={error} />;
+    if (!version) return <NotFound />;
+    
+    return <VersionDisplay version={version} />;
+    ```
+  </Accordion>
+  
+  <Accordion title="Use refetch for user-triggered updates">
+    ```tsx
+    const { data: votd, loading, refetch } = useVOTD(dayOfYear);
+    
+    return (
+      <div>
+        <Verse verse={votd?.verse} />
+        <button onClick={refetch} disabled={loading}>
+          {loading ? 'Refreshing...' : 'Refresh'}
+        </button>
+      </div>
+    );
+    ```
+  </Accordion>
+</AccordionGroup>

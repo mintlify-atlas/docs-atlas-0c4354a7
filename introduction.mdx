@@ -1,0 +1,175 @@
+---
+title: "Introduction"
+description: "A comprehensive React SDK for integrating YouVersion Platform Bible content into your web applications"
+---
+
+## What is the YouVersion Platform React SDK?
+
+The YouVersion Platform React SDK is a comprehensive toolkit for building Bible-centered applications with React. It provides everything you need to integrate Bible content, reading experiences, and user features from the YouVersion Platform into your web applications.
+
+<Note>
+  The SDK is built with TypeScript and provides full type safety from API responses to your components using Zod schema validation.
+</Note>
+
+## Architecture
+
+The SDK is organized into three complementary packages that follow a clear dependency hierarchy:
+
+<CardGroup cols={3}>
+  <Card title="Core" icon="code" href="/api/core/overview">
+    **@youversion/platform-core**
+    
+    Pure TypeScript API clients with zero dependencies on React. Provides type-safe access to all YouVersion Platform endpoints.
+  </Card>
+  
+  <Card title="Hooks" icon="link" href="/api/hooks/overview">
+    **@youversion/platform-react-hooks**
+    
+    React integration layer with data fetching hooks, providers, and state management. Built on top of the Core package.
+  </Card>
+  
+  <Card title="UI" icon="palette" href="/api/ui/overview">
+    **@youversion/platform-react-ui**
+    
+    Ready-to-use React components for Bible readers, verses, and navigation. Uses Hooks for data and includes Tailwind styling.
+  </Card>
+</CardGroup>
+
+### Dependency Flow
+
+```
+@youversion/platform-core
+    ↓
+@youversion/platform-react-hooks
+    ↓
+@youversion/platform-react-ui
+```
+
+This architecture gives you flexibility in how you use the SDK:
+
+- **Use UI components** for the fastest integration with pre-built, styled components
+- **Use hooks directly** to build custom UI with managed data fetching
+- **Use core clients** for framework-agnostic API access or non-React environments
+
+## Key Features
+
+<AccordionGroup>
+  <Accordion title="Type-Safe API Access" icon="shield-check">
+    Every API response is validated using Zod schemas, ensuring type safety throughout your application. The SDK is built with TypeScript and provides comprehensive type definitions for all data structures.
+    
+    ```typescript
+    // All responses are fully typed
+    const passage = await bibleClient.getPassage(3034, 'JHN.3.16');
+    // passage is typed as BiblePassage with validated fields
+    ```
+  </Accordion>
+  
+  <Accordion title="Ready-to-Use Components" icon="puzzle-piece">
+    Pre-built React components handle common use cases:
+    
+    - **BibleTextView** - Display verses or passages with formatting
+    - **BibleReader** - Full reading experience with navigation
+    - **VerseOfTheDay** - Beautiful verse cards
+    - **BibleVersionPicker** - Version selection UI
+    - **BibleChapterPicker** - Book and chapter navigation
+    
+    All components support light/dark themes and are fully customizable.
+  </Accordion>
+  
+  <Accordion title="Flexible Data Hooks" icon="arrows-rotate">
+    React hooks for data fetching follow a consistent pattern with `{ data, loading, error, refetch }` returns:
+    
+    - `usePassage` - Fetch Bible passages
+    - `useVersion` - Get Bible version metadata
+    - `useChapter` - Fetch complete chapters
+    - `useVerseOfTheDay` - Get daily verses
+    - `useBooks` - List books of the Bible
+    - And many more...
+  </Accordion>
+  
+  <Accordion title="OAuth 2.0 Authentication" icon="lock">
+    Built-in authentication with YouVersion accounts using OAuth 2.0 PKCE flow:
+    
+    - Secure token management with automatic refresh
+    - User profile access
+    - Highlights and bookmarks (coming soon)
+    - Configurable storage strategies
+  </Accordion>
+  
+  <Accordion title="Multi-Language Support" icon="language">
+    Access Bible versions in multiple languages:
+    
+    - Filter versions by language code or range
+    - Get localized version names and abbreviations
+    - Support for hundreds of Bible translations
+  </Accordion>
+  
+  <Accordion title="Customizable Theming" icon="paintbrush">
+    Components use Tailwind CSS with a namespaced prefix (`yv:`) to prevent style conflicts:
+    
+    - Light and dark mode support
+    - CSS custom properties for easy theming
+    - No style pollution in your app
+    - Works with any CSS framework
+  </Accordion>
+</AccordionGroup>
+
+## Requirements
+
+<Warning>
+  The SDK requires **Node.js >= 20.0.0** and **React >= 19.1.0**. Make sure your environment meets these requirements before installing.
+</Warning>
+
+- **Node.js**: 20.0.0 or higher
+- **React**: 19.1.0 or higher
+- **React DOM**: 19.1.0 or higher (for UI components)
+- **YouVersion Platform API Key**: Get yours at [platform.youversion.com](https://platform.youversion.com)
+
+## Choose Your Package
+
+Which package should you use? It depends on your needs:
+
+### Use `@youversion/platform-react-ui` when:
+
+- You want to get started quickly with pre-built components
+- You need a complete Bible reading experience out of the box
+- You're building a standard Bible app or website
+- You want styling and theming handled for you
+
+### Use `@youversion/platform-react-hooks` when:
+
+- You want to build custom UI components
+- You need data fetching with React state management
+- You have your own design system
+- You want more control over the presentation
+
+### Use `@youversion/platform-core` when:
+
+- You're not using React or want framework-agnostic code
+- You need direct API access without React dependencies
+- You're building a Node.js backend or CLI tool
+- You want the smallest possible bundle size
+
+<Note>
+  **Pro Tip**: You can always start with the UI package and drop down to hooks or core as needed. The packages are designed to work together seamlessly.
+</Note>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install the SDK packages and set up your API credentials
+  </Card>
+  
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Build your first Bible experience in under 5 minutes
+  </Card>
+  
+  <Card title="Core Concepts" icon="book-open" href="/concepts/architecture">
+    Learn about the SDK architecture and design principles
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api/core/overview">
+    Explore the complete API documentation
+  </Card>
+</CardGroup>

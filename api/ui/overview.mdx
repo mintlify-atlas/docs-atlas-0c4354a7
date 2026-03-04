@@ -1,0 +1,106 @@
+---
+title: UI Components Overview
+description: Pre-built React components for displaying Bible content with rich features like verse selection, footnotes, and theming
+---
+
+The UI Components package provides a complete set of React components for building Bible-reading experiences. All components are built on top of the React Hooks layer and include built-in theming, accessibility features, and seamless integration with the YouVersion Platform API.
+
+## Installation
+
+```bash
+npm install @youversion/platform-react-ui
+```
+
+## Key Features
+
+- **Automatic Style Injection**: Styles are automatically injected when you import the package
+- **Light/Dark Theme Support**: All components support light and dark themes
+- **Accessibility**: Built with Radix UI primitives for WCAG compliance
+- **Customizable**: Extensive props for controlling appearance and behavior
+- **Type-Safe**: Full TypeScript support with exported types
+
+## Provider Setup
+
+Wrap your application with the `YouVersionProvider` to enable all UI components:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-ui';
+
+function App() {
+  return (
+    <YouVersionProvider
+      apiKey="your-api-key"
+      authEnabled={true}
+      authRedirectUrl="https://yourapp.com/callback"
+    >
+      {/* Your app components */}
+    </YouVersionProvider>
+  );
+}
+```
+
+## Available Components
+
+### Reading Components
+
+- **[BibleTextView](/api/ui/bible-text-view)** - Display Bible passages with verse numbers and footnotes
+- **[BibleReader](/api/ui/bible-reader)** - Full-featured Bible reading experience with navigation
+- **[VerseOfTheDay](/api/ui/verse-of-the-day)** - Display the daily verse in a card format
+- **[BibleCard](/api/ui/bible-card)** - Embeddable Bible passage card
+
+### Picker Components
+
+- **[BibleVersionPicker](/api/ui/bible-version-picker)** - Select Bible versions with language filtering
+- **[BibleChapterPicker](/api/ui/bible-chapter-picker)** - Navigate books and chapters
+
+### Authentication
+
+- **[YouVersionAuthButton](/api/ui/auth-button)** - Sign in/out with YouVersion OAuth
+
+## Theming
+
+All components support light and dark themes via the `background` prop or the global theme provider:
+
+```tsx
+// Per-component theme
+<BibleTextView 
+  reference="JHN.3.16" 
+  versionId={111} 
+  background="dark" 
+/>
+
+// Global theme from provider
+<YouVersionProvider theme="dark">
+  {/* All components inherit dark theme */}
+</YouVersionProvider>
+```
+
+## Styling
+
+The package uses Tailwind CSS with the `yv:` prefix to prevent naming collisions with your application's styles. All styles are automatically injected - no additional setup required.
+
+### Custom Styling
+
+Components use CSS custom properties for theming. You can override these in your global styles:
+
+```css
+[data-yv-sdk] {
+  --yv-primary: your-color;
+  --yv-background: your-color;
+  /* etc. */
+}
+```
+
+## TypeScript Support
+
+All components are fully typed with exported interfaces:
+
+```tsx
+import type { BibleTextViewProps } from '@youversion/platform-react-ui';
+
+const props: BibleTextViewProps = {
+  reference: 'JHN.3.16',
+  versionId: 111,
+  showVerseNumbers: true,
+};
+```

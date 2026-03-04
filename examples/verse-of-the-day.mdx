@@ -1,0 +1,303 @@
+---
+title: Verse of the Day
+description: Display a beautiful daily verse card with the VerseOfTheDay component
+---
+
+The `VerseOfTheDay` component displays the daily Bible verse in an attractive card format with optional sharing, attribution, and customization options.
+
+## Basic Usage
+
+```tsx
+import { VerseOfTheDay } from '@youversion/platform-react-ui';
+
+function DailyVerse() {
+  return (
+    <VerseOfTheDay
+      versionId={111}  // NIV
+    />
+  );
+}
+```
+
+## Customization Options
+
+Control the appearance and features of the verse card:
+
+```tsx
+import { VerseOfTheDay } from '@youversion/platform-react-ui';
+
+function CustomizedVOTD() {
+  return (
+    <VerseOfTheDay
+      versionId={3034}                  // Berean Standard Bible
+      showSunIcon={true}                // Display sun icon
+      showShareButton={true}            // Enable share functionality
+      showBibleAppAttribution={true}    // Show Bible App branding
+      size="default"                    // "default" | "lg"
+      background="light"                // "light" | "dark"
+    />
+  );
+}
+```
+
+## Size Variants
+
+The component supports two size variants:
+
+<CodeGroup>
+```tsx Default Size
+<VerseOfTheDay
+  versionId={111}
+  size="default"
+/>
+```
+
+```tsx Large Size
+<VerseOfTheDay
+  versionId={111}
+  size="lg"  // Larger text and padding
+/>
+```
+</CodeGroup>
+
+## Minimal Version
+
+Create a clean, minimal verse display by hiding optional elements:
+
+```tsx
+function MinimalVOTD() {
+  return (
+    <VerseOfTheDay
+      versionId={111}
+      showSunIcon={false}
+      showShareButton={false}
+      showBibleAppAttribution={false}
+    />
+  );
+}
+```
+
+## Share Functionality
+
+The built-in share button uses the Web Share API when available, falling back to clipboard copy:
+
+```tsx
+function ShareableVOTD() {
+  return (
+    <VerseOfTheDay
+      versionId={111}
+      showShareButton={true}
+    />
+  );
+  // Clicking share will:
+  // 1. Use navigator.share() if available (mobile)
+  // 2. Fall back to clipboard copy on desktop
+  // 3. Share verse text + reference
+}
+```
+
+## Specific Day of Year
+
+Display the verse for a specific day instead of today:
+
+```tsx
+function SpecificDayVOTD() {
+  // Day 1 = January 1st, Day 365 = December 31st
+  const dayOfYear = 100;  // April 10th (non-leap year)
+
+  return (
+    <VerseOfTheDay
+      versionId={111}
+      dayOfYear={dayOfYear}
+    />
+  );
+}
+```
+
+## Calculate Day of Year
+
+Helper function to get the current day:
+
+```tsx
+import { VerseOfTheDay, getDayOfYear } from '@youversion/platform-react-ui';
+
+function TodaysVerse() {
+  const today = getDayOfYear(new Date());
+  
+  return (
+    <VerseOfTheDay
+      versionId={111}
+      dayOfYear={today}
+    />
+  );
+}
+```
+
+## Using Custom Hooks
+
+For more control, use the underlying hooks directly:
+
+```tsx
+import { useVerseOfTheDay, usePassage, useVersion, getDayOfYear } from '@youversion/platform-react-hooks';
+import { Verse } from '@youversion/platform-react-ui';
+
+function CustomVOTD() {
+  const versionId = 111;
+  const day = getDayOfYear(new Date());
+  
+  const { data: votdData, loading: loadingVOTD } = useVerseOfTheDay(day);
+  const { passage, loading: loadingPassage } = usePassage({
+    versionId,
+    usfm: votdData?.passage_id || '',
+    options: { enabled: !!votdData?.passage_id },
+  });
+  const { version } = useVersion(versionId);
+
+  if (loadingVOTD || loadingPassage) {
+    return <div>Loading verse of the day...</div>;
+  }
+
+  return (
+    <div className="votd-custom">
+      <h2>Verse of the Day</h2>
+      <Verse.Html 
+        html={passage?.content || ''}
+        fontSize={18}
+      />
+      <p className="reference">
+        {passage?.reference} {version?.localized_abbreviation}
+      </p>
+    </div>
+  );
+}
+```
+
+## Theme Support
+
+The component automatically adapts to light and dark themes:
+
+<CodeGroup>
+```tsx Light Theme
+<VerseOfTheDay
+  versionId={111}
+  background="light"
+/>
+```
+
+```tsx Dark Theme
+<VerseOfTheDay
+  versionId={111}
+  background="dark"
+/>
+```
+
+```tsx Auto Theme
+// Uses theme from YouVersionProvider
+<VerseOfTheDay
+  versionId={111}
+  // background prop omitted - uses provider theme
+/>
+```
+</CodeGroup>
+
+## Complete Example
+
+A full implementation with controls:
+
+```tsx
+import { useState } from 'react';
+import { VerseOfTheDay, getDayOfYear } from '@youversion/platform-react-ui';
+
+function VOTDShowcase() {
+  const [size, setSize] = useState<'default' | 'lg'>('default');
+  const [showSunIcon, setShowSunIcon] = useState(true);
+  const [showShareButton, setShowShareButton] = useState(true);
+  const [showAttribution, setShowAttribution] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  return (
+    <div className="container">
+      <div className="controls">
+        <label>
+          Size:
+          <select 
+            value={size} 
+            onChange={(e) => setSize(e.target.value as 'default' | 'lg')}
+          >
+            <option value="default">Default</option>
+            <option value="lg">Large</option>
+          </select>
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={showSunIcon}
+            onChange={(e) => setShowSunIcon(e.target.checked)}
+          />
+          Show Sun Icon
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={showShareButton}
+            onChange={(e) => setShowShareButton(e.target.checked)}
+          />
+          Show Share Button
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={showAttribution}
+            onChange={(e) => setShowAttribution(e.target.checked)}
+          />
+          Show Attribution
+        </label>
+
+        <label>
+          Theme:
+          <select 
+            value={theme} 
+            onChange={(e) => setTheme(e.target.value as 'light' | 'dark')}
+          >
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+      </div>
+
+      <VerseOfTheDay
+        versionId={111}
+        dayOfYear={getDayOfYear(new Date())}
+        size={size}
+        showSunIcon={showSunIcon}
+        showShareButton={showShareButton}
+        showBibleAppAttribution={showAttribution}
+        background={theme}
+      />
+    </div>
+  );
+}
+
+export default VOTDShowcase;
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `versionId` | `number` | - | Bible version ID |
+| `dayOfYear` | `number` | Current day | Day of year (1-366) |
+| `size` | `'default' \| 'lg'` | `'default'` | Card size |
+| `showSunIcon` | `boolean` | `true` | Display sun icon |
+| `showShareButton` | `boolean` | `true` | Show share button |
+| `showBibleAppAttribution` | `boolean` | `true` | Show Bible App branding |
+| `background` | `'light' \| 'dark'` | Provider theme | Theme override |
+
+## Related Components
+
+- [Verse Display](/examples/verse-display) - Display any Bible verse
+- [Bible Reader](/examples/bible-reader) - Full reading experience
+- [Custom Hooks](/examples/custom-hooks) - Build your own components

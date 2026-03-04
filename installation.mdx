@@ -1,0 +1,337 @@
+---
+title: "Installation"
+description: "Install the YouVersion Platform React SDK packages and set up your development environment"
+---
+
+## Prerequisites
+
+Before installing the SDK, ensure your environment meets these requirements:
+
+<CardGroup cols={2}>
+  <Card title="Node.js" icon="node-js">
+    **Version 20.0.0 or higher**
+    
+    Check your version:
+    ```bash
+    node --version
+    ```
+  </Card>
+  
+  <Card title="React" icon="react">
+    **Version 19.1.0 or higher**
+    
+    Required for hooks and UI packages
+  </Card>
+</CardGroup>
+
+<Warning>
+  The SDK requires **Node.js >= 20.0.0** and uses features from modern JavaScript. Older Node versions are not supported.
+</Warning>
+
+## Get Your API Key
+
+Before installing the SDK, you'll need an API key from the YouVersion Platform:
+
+<Steps>
+  <Step title="Create an account">
+    Visit [platform.youversion.com](https://platform.youversion.com) and sign up for a developer account.
+  </Step>
+  
+  <Step title="Create an application">
+    From your dashboard, create a new application to receive your API key.
+  </Step>
+  
+  <Step title="Copy your API key">
+    Save your API key securely. You'll need it to authenticate all requests.
+    
+    <Warning>
+      Never commit your API key to version control. Use environment variables or a secure secrets manager.
+    </Warning>
+  </Step>
+</Steps>
+
+## Choose Your Package
+
+The SDK provides three packages. Choose the one that fits your needs:
+
+<Tabs>
+  <Tab title="UI Components (Recommended)">
+    Install `@youversion/platform-react-ui` for the complete experience with pre-built components:
+    
+    <CodeGroup>
+    ```bash npm
+    npm install @youversion/platform-react-ui
+    ```
+    
+    ```bash yarn
+    yarn add @youversion/platform-react-ui
+    ```
+    
+    ```bash pnpm
+    pnpm add @youversion/platform-react-ui
+    ```
+    </CodeGroup>
+    
+    <Note>
+      This package includes both `@youversion/platform-react-hooks` and `@youversion/platform-core` as dependencies, so you get everything in one install.
+    </Note>
+    
+    **What's included:**
+    - All UI components (BibleTextView, BibleReader, VerseOfTheDay, etc.)
+    - All React hooks for data fetching
+    - Core API clients
+    - Tailwind CSS styling (auto-injected)
+  </Tab>
+  
+  <Tab title="React Hooks">
+    Install `@youversion/platform-react-hooks` to build custom UI with managed data fetching:
+    
+    <CodeGroup>
+    ```bash npm
+    npm install @youversion/platform-react-hooks
+    ```
+    
+    ```bash yarn
+    yarn add @youversion/platform-react-hooks
+    ```
+    
+    ```bash pnpm
+    pnpm add @youversion/platform-react-hooks
+    ```
+    </CodeGroup>
+    
+    <Note>
+      This package includes `@youversion/platform-core` as a dependency.
+    </Note>
+    
+    **What's included:**
+    - All React hooks (usePassage, useVersion, useChapter, etc.)
+    - YouVersionProvider for configuration
+    - Core API clients
+    - No UI components or styling
+  </Tab>
+  
+  <Tab title="Core API">
+    Install `@youversion/platform-core` for framework-agnostic API access:
+    
+    <CodeGroup>
+    ```bash npm
+    npm install @youversion/platform-core
+    ```
+    
+    ```bash yarn
+    yarn add @youversion/platform-core
+    ```
+    
+    ```bash pnpm
+    pnpm add @youversion/platform-core
+    ```
+    </CodeGroup>
+    
+    <Note>
+      This package has zero dependencies on React and can be used in Node.js, browsers, or any JavaScript environment.
+    </Note>
+    
+    **What's included:**
+    - Type-safe API clients (ApiClient, BibleClient, LanguagesClient, etc.)
+    - Zod schema validation
+    - OAuth 2.0 PKCE authentication
+    - No React dependencies
+  </Tab>
+</Tabs>
+
+## Install All Three Packages
+
+For maximum flexibility, you can install all three packages separately:
+
+<CodeGroup>
+```bash npm
+npm install @youversion/platform-react-ui \
+            @youversion/platform-react-hooks \
+            @youversion/platform-core
+```
+
+```bash yarn
+yarn add @youversion/platform-react-ui \
+         @youversion/platform-react-hooks \
+         @youversion/platform-core
+```
+
+```bash pnpm
+pnpm add @youversion/platform-react-ui \
+         @youversion/platform-react-hooks \
+         @youversion/platform-core
+```
+</CodeGroup>
+
+<Note>
+  Installing `@youversion/platform-react-ui` automatically includes the other two packages as dependencies, so separate installation is only needed if you want explicit control over versions.
+</Note>
+
+## Verify Installation
+
+After installing, verify the SDK is working:
+
+<Steps>
+  <Step title="Check package versions">
+    View installed versions:
+    
+    ```bash
+    npm list @youversion/platform-react-ui
+    npm list @youversion/platform-react-hooks
+    npm list @youversion/platform-core
+    ```
+  </Step>
+  
+  <Step title="Import in your code">
+    Try importing the SDK in a React component:
+    
+    ```tsx
+    import { YouVersionProvider } from '@youversion/platform-react-ui';
+    // or
+    import { YouVersionProvider } from '@youversion/platform-react-hooks';
+    // or
+    import { ApiClient } from '@youversion/platform-core';
+    ```
+  </Step>
+</Steps>
+
+## Environment Setup
+
+Store your API key securely using environment variables:
+
+<Tabs>
+  <Tab title="Next.js">
+    Create a `.env.local` file in your project root:
+    
+    ```bash .env.local
+    NEXT_PUBLIC_YOUVERSION_API_KEY=your_api_key_here
+    ```
+    
+    Use in your code:
+    
+    ```tsx
+    <YouVersionProvider appKey={process.env.NEXT_PUBLIC_YOUVERSION_API_KEY}>
+      {children}
+    </YouVersionProvider>
+    ```
+    
+    <Warning>
+      In Next.js, prefix client-side environment variables with `NEXT_PUBLIC_` to expose them to the browser.
+    </Warning>
+  </Tab>
+  
+  <Tab title="Vite">
+    Create a `.env` file in your project root:
+    
+    ```bash .env
+    VITE_YOUVERSION_API_KEY=your_api_key_here
+    ```
+    
+    Use in your code:
+    
+    ```tsx
+    <YouVersionProvider appKey={import.meta.env.VITE_YOUVERSION_API_KEY}>
+      {children}
+    </YouVersionProvider>
+    ```
+    
+    <Warning>
+      In Vite, prefix client-side environment variables with `VITE_` to expose them to the browser.
+    </Warning>
+  </Tab>
+  
+  <Tab title="Create React App">
+    Create a `.env` file in your project root:
+    
+    ```bash .env
+    REACT_APP_YOUVERSION_API_KEY=your_api_key_here
+    ```
+    
+    Use in your code:
+    
+    ```tsx
+    <YouVersionProvider appKey={process.env.REACT_APP_YOUVERSION_API_KEY}>
+      {children}
+    </YouVersionProvider>
+    ```
+    
+    <Warning>
+      In Create React App, prefix client-side environment variables with `REACT_APP_` to expose them to the browser.
+    </Warning>
+  </Tab>
+  
+  <Tab title="Other">
+    For other frameworks, consult their documentation on environment variables. The key principle is:
+    
+    1. Store your API key in a `.env` file
+    2. Add `.env` to your `.gitignore`
+    3. Use the framework's environment variable syntax to access it
+    
+    <Warning>
+      Never hardcode your API key in source code or commit it to version control.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## TypeScript Configuration
+
+The SDK is built with TypeScript and includes type definitions. No additional setup is needed, but ensure your `tsconfig.json` has these settings:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
+```
+
+<Note>
+  The SDK uses modern JavaScript features and requires `target: "ES2020"` or higher.
+</Note>
+
+## Styling Setup (UI Package Only)
+
+<Note>
+  If you're using `@youversion/platform-react-ui`, styles are **automatically injected** when you import the package. No additional CSS imports or Tailwind configuration needed!
+</Note>
+
+The UI package uses Tailwind CSS with a namespaced prefix (`yv:`) to prevent style conflicts. Styles are embedded in the JavaScript bundle and injected automatically:
+
+```tsx
+// Styles are automatically injected when you import any UI component
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+// No need to import CSS files or configure Tailwind
+```
+
+The SDK handles all styling internally, so your own Tailwind configuration (if any) won't conflict.
+
+## Next Steps
+
+Now that you have the SDK installed, you're ready to build your first Bible experience:
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Display your first Bible verse in under 5 minutes
+  </Card>
+  
+  <Card title="Architecture Overview" icon="sitemap" href="/concepts/architecture">
+    Learn how the three packages work together
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api/core/overview">
+    Explore the complete API documentation
+  </Card>
+  
+  <Card title="Examples" icon="book-open" href="/examples/verse-display">
+    See real-world code examples
+  </Card>
+</CardGroup>

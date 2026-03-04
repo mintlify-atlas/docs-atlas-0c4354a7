@@ -1,97 +1,249 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "YouVersion Platform React SDK"
+mode: "custom"
 ---
 
-## Setting up
+<div className="relative overflow-hidden bg-gradient-to-br from-[#94cb04] to-[#7aa003] dark:from-[#94cb04] dark:to-[#7aa003] py-20">
+  <div className="max-w-6xl mx-auto px-6">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div className="lg:col-span-7">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+          Build Bible experiences with React
+        </h1>
+        <p className="text-lg sm:text-xl text-white/90 mb-8 max-w-2xl">
+          A comprehensive React SDK for integrating YouVersion Platform Bible content into your web applications. Type-safe API clients, React hooks, and ready-to-use components.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a 
+            href="/quickstart" 
+            className="inline-flex items-center px-6 py-3 bg-white text-[#94cb04] font-semibold rounded-lg hover:bg-gray-50 transition-colors no-underline"
+          >
+            Get Started
+          </a>
+          <a 
+            href="/api/core/overview" 
+            className="inline-flex items-center px-6 py-3 border-2 border-white/30 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-colors no-underline"
+          >
+            API Reference
+          </a>
+        </div>
+      </div>
+      <div className="lg:col-span-5 hidden lg:block">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+          <pre className="text-sm text-white/90 overflow-x-auto">
+{`import { YouVersionProvider, 
+         BibleTextView } 
+from '@youversion/platform-react-ui';
 
-Get your documentation site up and running in minutes.
+function App() {
+  return (
+    <YouVersionProvider 
+      appKey="YOUR_APP_KEY"
+    >
+      <BibleTextView 
+        reference="JHN.3.16" 
+        versionId={3034} 
+      />
+    </YouVersionProvider>
+  );
+}`}
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Quick Start</h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Get up and running with the YouVersion Platform React SDK in three simple steps.
+  </p>
+  
+  <Steps>
+    <Step title="Install the SDK">
+      Choose your preferred package based on your needs. Install the UI components package for the complete experience, or use the hooks or core package for more control.
+      
+      <CodeGroup>
+      ```bash npm
+      npm install @youversion/platform-react-ui
+      ```
+      ```bash yarn
+      yarn add @youversion/platform-react-ui
+      ```
+      ```bash pnpm
+      pnpm add @youversion/platform-react-ui
+      ```
+      </CodeGroup>
+    </Step>
 
-## Make it yours
+    <Step title="Get your API credentials">
+      Visit the [YouVersion Platform](https://platform.youversion.com/) to create an account and obtain your API key. You'll need this key to authenticate your requests.
+      
+      <Note>
+        Your API key is required to access Bible content through the SDK. Keep it secure and never commit it to version control.
+      </Note>
+    </Step>
 
-Design a docs site that looks great and empowers your users.
+    <Step title="Display your first verse">
+      Wrap your app with `YouVersionProvider` and start using components to display Bible content.
+      
+      ```tsx
+      import { YouVersionProvider, BibleTextView } from '@youversion/platform-react-ui';
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
+      function App() {
+        return (
+          <YouVersionProvider appKey="YOUR_APP_KEY">
+            <BibleTextView reference="JHN.3.16" versionId={3034} />
+          </YouVersionProvider>
+        );
+      }
+      ```
+      
+      <Accordion title="See the rendered output">
+        The `BibleTextView` component will render the verse text with proper formatting, including verse numbers and styling that adapts to your application's theme.
+      </Accordion>
+    </Step>
+  </Steps>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Explore by Package</h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    The SDK is organized into three packages, each serving a different level of abstraction.
+  </p>
+  
+  <CardGroup cols={3}>
     <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+      title="UI Components"
+      icon="palette"
+      href="/api/ui/overview"
+    >
+      Pre-built React components for Bible readers, verses, and navigation. The fastest way to add Bible content to your app.
+    </Card>
+    <Card
+      title="React Hooks"
+      icon="link"
+      href="/api/hooks/overview"
+    >
+      Data fetching hooks and providers for Bible content. Build custom UI with state management included.
+    </Card>
+    <Card
+      title="Core API"
+      icon="code"
+      href="/api/core/overview"
+    >
+      Type-safe API clients for direct access to YouVersion Platform. Framework-agnostic and fully typed.
+    </Card>
+  </CardGroup>
+</div>
 
-## Create beautiful pages
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Key Features</h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Everything you need to build world-class Bible experiences.
+  </p>
+  
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="border dark:border-[#27272a] border-gray-200 rounded-2xl p-6 bg-gray-50 dark:bg-[#1a1d27] hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors">
+      <div className="w-10 h-10 rounded-lg bg-[#94cb04]/10 dark:bg-[#94cb04]/10 flex items-center justify-center mb-4">
+        <svg className="w-6 h-6 text-[#94cb04]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Type-Safe API</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Full TypeScript support with Zod schema validation ensures type safety from API responses to your components.
+      </p>
+    </div>
 
-Everything you need to create world-class documentation.
+    <div className="border dark:border-[#27272a] border-gray-200 rounded-2xl p-6 bg-gray-50 dark:bg-[#1a1d27] hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors">
+      <div className="w-10 h-10 rounded-lg bg-[#94cb04]/10 dark:bg-[#94cb04]/10 flex items-center justify-center mb-4">
+        <svg className="w-6 h-6 text-[#94cb04]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">OAuth Authentication</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Built-in OAuth 2.0 PKCE flow for secure user authentication with YouVersion accounts.
+      </p>
+    </div>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+    <div className="border dark:border-[#27272a] border-gray-200 rounded-2xl p-6 bg-gray-50 dark:bg-[#1a1d27] hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors">
+      <div className="w-10 h-10 rounded-lg bg-[#94cb04]/10 dark:bg-[#94cb04]/10 flex items-center justify-center mb-4">
+        <svg className="w-6 h-6 text-[#94cb04]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Multi-Language Support</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Access Bible versions in multiple languages with built-in language filtering and version management.
+      </p>
+    </div>
 
-## Need inspiration?
+    <div className="border dark:border-[#27272a] border-gray-200 rounded-2xl p-6 bg-gray-50 dark:bg-[#1a1d27] hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors">
+      <div className="w-10 h-10 rounded-lg bg-[#94cb04]/10 dark:bg-[#94cb04]/10 flex items-center justify-center mb-4">
+        <svg className="w-6 h-6 text-[#94cb04]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Customizable Theming</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Tailwind-based styling with dark mode support. All components adapt to your design system.
+      </p>
+    </div>
+  </div>
+</div>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Learn More</h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Dive deeper into the SDK with guides and examples.
+  </p>
+  
+  <CardGroup cols={2}>
+    <Card
+      title="Core Concepts"
+      icon="book-open"
+      href="/concepts/architecture"
+    >
+      Understand the three-layer architecture and how the packages work together.
+    </Card>
+    <Card
+      title="Authentication Guide"
+      icon="shield-halved"
+      href="/guides/user-authentication"
+    >
+      Learn how to implement user authentication with YouVersion accounts.
+    </Card>
+    <Card
+      title="Component Examples"
+      icon="palette"
+      href="/examples/bible-reader"
+    >
+      Explore real-world examples of building Bible reading experiences.
+    </Card>
+    <Card
+      title="Custom Hooks"
+      icon="link"
+      href="/examples/custom-hooks"
+    >
+      See how to use hooks to build custom data fetching patterns.
+    </Card>
+  </CardGroup>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="border dark:border-[#27272a] border-gray-200 rounded-2xl p-8 bg-gradient-to-br from-gray-50 to-white dark:from-[#1a1d27] dark:to-[#242838]">
+    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Ready to get started?</h2>
+    <p className="text-base text-gray-600 dark:text-gray-400 mb-6">
+      Follow our quickstart guide to build your first Bible experience in minutes.
+    </p>
+    <a 
+      href="/quickstart" 
+      className="inline-flex items-center px-6 py-3 bg-[#94cb04] text-white font-semibold rounded-lg hover:bg-[#7aa003] transition-colors no-underline"
+    >
+      View Quickstart
+    </a>
+  </div>
+</div>

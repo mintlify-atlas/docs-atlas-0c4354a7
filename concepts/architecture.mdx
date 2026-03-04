@@ -1,0 +1,361 @@
+---
+title: Architecture
+description: Understand the three-layer architecture of the YouVersion Platform React SDK
+---
+
+## Overview
+
+The YouVersion Platform React SDK is designed with a **three-layer architecture** that promotes separation of concerns, type safety, and maintainability. This architecture ensures that each layer has a clear responsibility and can be used independently or together.
+
+```
+@youversion/platform-core  →  @youversion/platform-react-hooks  →  @youversion/platform-react-ui
+      (pure TS)                      (React hooks)                      (React components)
+```
+
+## The Three Layers
+
+### Layer 1: Core (`@youversion/platform-core`)
+
+**Pure TypeScript API clients with zero dependencies on React or browser-specific APIs.**
+
+The core layer provides framework-agnostic API clients for interacting with YouVersion services. It's built with:
+
+- **Zero React dependencies** - Can be used in Node.js, Deno, or any JavaScript environment
+- **Schema-first design** - All types defined using Zod for runtime validation
+- **Native fetch API** - No external HTTP dependencies
+- **Storage abstraction** - Pluggable storage strategies for auth tokens
+
+<CodeGroup>
+
+```typescript Core Layer Example
+import { ApiClient, BibleClient } from '@youversion/platform-core';
+
+// Create API client
+const apiClient = new ApiClient({
+  appKey: 'your-app-key',
+  apiHost: 'api.youversion.com',
+  installationId: 'your-installation-id'
+});
+
+// Create Bible client
+const bibleClient = new BibleClient(apiClient);
+
+// Fetch Bible data
+const chapter = await bibleClient.getChapter(3034, 'JHN', 3);
+const verse = await bibleClient.getVerse(3034, 'JHN', 3, 16);
+```
+
+```typescript Storage Strategies
+import { SessionStorageStrategy, MemoryStorageStrategy } from '@youversion/platform-core';
+
+// Use session storage (default)
+const sessionStorage = new SessionStorageStrategy();
+sessionStorage.setItem('auth_token', 'token_value');
+
+// Use memory storage (cleared on page refresh)
+const memoryStorage = new MemoryStorageStrategy();
+memoryStorage.setItem('auth_token', 'token_value');
+```
+
+</CodeGroup>
+
+**Key Components:**
+
+- `ApiClient` - Main HTTP client with auth handling and timeout support
+- `BibleClient` - Fetch Bibles, chapters, verses, versions
+- `LanguagesClient` - Get available languages
+- `HighlightsClient` - Manage user highlights
+- `SignInWithYouVersionPKCE()` - OAuth 2.0 PKCE authentication flow
+- Storage strategies: `SessionStorage`, `MemoryStorage`
+
+<Note>
+The core package is completely framework-agnostic. You can use it in any JavaScript environment, not just React applications.
+</Note>
+
+### Layer 2: Hooks (`@youversion/platform-react-hooks`)
+
+**React integration layer that wraps core clients with React hooks and context providers.**
+
+The hooks layer provides a React-friendly API for accessing YouVersion data. It handles:
+
+- **React state management** - Loading states, errors, and caching
+- **Context providers** - Configuration, authentication, and reading session state
+- **Data fetching hooks** - Simple hooks that return `{ data, loading, error, refetch }`
+- **No UI** - Hooks are UI-agnostic and return data only
+
+<CodeGroup>
+
+```tsx Provider Setup
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+
+function App() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      theme="light"
+      includeAuth={true}
+      authRedirectUrl="https://myapp.com/callback"
+    >
+      <MyApp />
+    </YouVersionProvider>
+  );
+}
+```
+
+```tsx Data Fetching Hooks
+import { useChapter, useVersion } from '@youversion/platform-react-hooks';
+
+function ChapterView() {
+  const { chapter, loading, error } = useChapter(3034, 'JHN', 3);
+  const { version } = useVersion(3034);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      <h1>{version?.name}</h1>
+      <div>{chapter?.content}</div>
+    </div>
+  );
+}
+```
+
+```tsx Authentication Hook
+import { useYVAuth } from '@youversion/platform-react-hooks';
+
+function AuthButton() {
+  const { auth, userInfo, signIn, signOut } = useYVAuth();
+
+  if (!auth.isAuthenticated) {
+    return <button onClick={() => signIn()}>Sign In</button>;
+  }
+
+  return (
+    <div>
+      <p>Welcome, {userInfo?.name}!</p>
+      <button onClick={signOut}>Sign Out</button>
+    </div>
+  );
+}
+```
+
+</CodeGroup>
+
+**Core Providers:**
+
+1. **YouVersionProvider** - Core SDK configuration (API base URL, app key, theme)
+2. **YouVersionAuthProvider** - Authentication state and user info (automatically included when `includeAuth={true}`)
+3. **ReaderProvider** - Bible reading session state (current book, chapter, verse)
+
+**Available Hooks:**
+
+- `useChapter()`, `useBook()`, `usePassage()`, `useVerse()`
+- `useVersion()`, `useVerseOfTheDay()`
+- `useYVAuth()` - Authentication and user management
+- `useChapterNavigation()` - Navigate between chapters
+
+<Info>
+All data hooks follow the same pattern: `{ data, loading, error, refetch }`. This makes them predictable and easy to use.
+</Info>
+
+### Layer 3: UI (`@youversion/platform-react-ui`)
+
+**Pre-built React components with complete styling and accessibility.**
+
+The UI layer provides production-ready components that handle common Bible reading experiences:
+
+- **Complete components** - Ready to use with minimal configuration
+- **Tailwind CSS styling** - Auto-injected, scoped, with dark mode support
+- **Radix UI primitives** - Built-in accessibility
+- **Compound components** - Flexible composition patterns
+
+<CodeGroup>
+
+```tsx Bible Reader
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function MyReader() {
+  return (
+    <BibleReader.Root
+      versionId={3034}
+      book="JHN"
+      chapter="1"
+      fontSize={16}
+      showVerseNumbers={true}
+      background="light"
+    >
+      <BibleReader.Content />
+      <BibleReader.Toolbar />
+    </BibleReader.Root>
+  );
+}
+```
+
+```tsx Verse of the Day
+import { VerseOfTheDay } from '@youversion/platform-react-ui';
+
+function DailyVerse() {
+  return (
+    <VerseOfTheDay
+      versionId={3034}
+      showSunIcon={true}
+      showShareButton={true}
+      showBibleAppAttribution={true}
+    />
+  );
+}
+```
+
+```tsx Auth Button
+import { YouVersionAuthButton } from '@youversion/platform-react-ui';
+
+function SignInButton() {
+  return (
+    <YouVersionAuthButton
+      redirectUrl="https://example.com/callback"
+      mode="auto"
+      size="default"
+      variant="default"
+      radius="rounded"
+    />
+  );
+}
+```
+
+</CodeGroup>
+
+**Available Components:**
+
+- `BibleTextView` - Display a single Bible passage
+- `VerseOfTheDay` - Daily verse card
+- `BibleReader` - Full reading experience with navigation
+- `BibleChapterPicker` - Book and chapter selection
+- `BibleVersionPicker` - Bible version selection
+- `BibleCard` - Embeddable Bible passage card
+- `YouVersionAuthButton` - Sign in/out button
+
+## Dependency Rules
+
+The architecture enforces strict dependency rules to maintain separation of concerns:
+
+<Warning>
+**Never introduce reverse dependencies:**
+
+- ❌ Core must NOT import from Hooks or UI
+- ❌ Hooks must NOT import from UI
+- ✅ Hooks CAN import from Core
+- ✅ UI CAN import from Hooks and Core
+</Warning>
+
+**Package Boundaries:**
+
+1. **Core** - Network + types (no React, no DOM)
+2. **Hooks** - React logic/state around core (no UI components)
+3. **UI** - Components and styling around hooks (no direct API calls)
+
+## When to Use Each Layer
+
+### Use Core When:
+
+- Building a Node.js application
+- Using a different framework (Vue, Angular, Svelte)
+- Need fine-grained control over API requests
+- Building server-side rendering without React
+- Want framework-agnostic code
+
+### Use Hooks When:
+
+- Building a React application with custom UI
+- Need data fetching with loading/error states
+- Want to integrate with your own design system
+- Need authentication without pre-built UI components
+
+### Use UI When:
+
+- Want to quickly add Bible reading features
+- Don't want to build custom UI components
+- Need production-ready, accessible components
+- Want dark mode and theming out of the box
+
+## Build Order
+
+The monorepo uses Turborepo to enforce the correct build order:
+
+```bash
+pnpm build  # Builds in dependency order:
+# 1. @youversion/platform-core
+# 2. @youversion/platform-react-hooks  
+# 3. @youversion/platform-react-ui
+```
+
+<Info>
+**Important:** Always rebuild dependent packages after modifying core or hooks. Use `turbo build --force` if build cache causes issues.
+</Info>
+
+## Unified Versioning
+
+All three packages share the **exact same version** and are always released together:
+
+```json
+{
+  "@youversion/platform-core": "1.18.1",
+  "@youversion/platform-react-hooks": "1.18.1",
+  "@youversion/platform-react-ui": "1.18.1"
+}
+```
+
+This ensures compatibility across all layers and simplifies dependency management.
+
+## Example: Full Stack Usage
+
+Here's how the three layers work together in a complete application:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+import { BibleReader, VerseOfTheDay } from '@youversion/platform-react-ui';
+
+// 1. Provider sets up configuration (Hooks layer)
+function App() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      theme="dark"
+      includeAuth={true}
+      authRedirectUrl="https://myapp.com/callback"
+    >
+      <HomePage />
+    </YouVersionProvider>
+  );
+}
+
+// 2. Components use UI layer (which internally uses Hooks → Core)
+function HomePage() {
+  return (
+    <div>
+      <VerseOfTheDay versionId={3034} />
+      <BibleReader.Root versionId={3034} book="JHN" chapter="1">
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+Behind the scenes:
+- UI components call hooks from the Hooks layer
+- Hooks call API clients from the Core layer  
+- Core makes HTTP requests to YouVersion API
+- Data flows back up through the layers
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/concepts/authentication">
+    Learn about OAuth 2.0 PKCE flow and user management
+  </Card>
+  <Card title="Theming" icon="palette" href="/concepts/theming">
+    Customize dark mode, colors, and styling
+  </Card>
+</CardGroup>

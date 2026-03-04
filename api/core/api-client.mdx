@@ -1,0 +1,401 @@
+---
+title: 'ApiClient'
+description: 'HTTP client for making authenticated requests to YouVersion Platform API'
+---
+
+# ApiClient
+
+The `ApiClient` class is a lightweight HTTP client for interacting with the YouVersion Platform API using the native `fetch` API. It provides convenient methods for GET, POST, and DELETE requests with typed responses, automatic timeout handling, and error management.
+
+All specialized clients (`BibleClient`, `LanguagesClient`, `HighlightsClient`) use this client internally.
+
+## Constructor
+
+```typescript
+import { ApiClient } from '@youversion/platform-core';
+
+const client = new ApiClient(config);
+```
+
+### Parameters
+
+<ParamField path="config" type="ApiConfig" required>
+  Configuration object for the API client
+  
+  <Expandable title="ApiConfig properties">
+    <ParamField path="appKey" type="string" required>
+      Your YouVersion Platform App Key from [platform.youversion.com](https://platform.youversion.com/)
+    </ParamField>
+    
+    <ParamField path="apiHost" type="string" default="api.youversion.com">
+      The API host to connect to. Only override for testing purposes.
+    </ParamField>
+    
+    <ParamField path="timeout" type="number" default={10000}>
+      Request timeout in milliseconds. Requests abort after this duration.
+    </ParamField>
+    
+    <ParamField path="installationId" type="string" default="web-sdk-default">
+      Unique identifier for this installation used in analytics.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Example
+
+```typescript
+const apiClient = new ApiClient({
+  appKey: 'your-app-key-here',
+  timeout: 15000, // 15 seconds
+  installationId: 'my-custom-id',
+});
+```
+
+## Properties
+
+<ResponseField name="config" type="ApiConfig">
+  The configuration object passed to the constructor. Publicly accessible.
+</ResponseField>
+
+## Methods
+
+### get()
+
+Sends a GET request to the specified API path with optional query parameters.
+
+```typescript
+async get<T>(path: string, params?: QueryParams, headers?: RequestHeaders): Promise<T>
+```
+
+<ParamField path="path" type="string" required>
+  The API endpoint path relative to the base URL (e.g., `/v1/bibles`).
+</ParamField>
+
+<ParamField path="params" type="QueryParams">
+  Optional query parameters to include in the request.
+  
+  Type: `Record<string, string | number | boolean | Array<string | number | boolean>>`
+</ParamField>
+
+<ParamField path="headers" type="RequestHeaders">
+  Optional additional headers to include in the request.
+  
+  Type: `Record<string, string>`
+</ParamField>
+
+<ResponseField name="Returns" type="Promise<T>">
+  Promise resolving to the typed response data.
+</ResponseField>
+
+#### Example
+
+```typescript
+import type { Collection, BibleVersion } from '@youversion/platform-core';
+
+// Simple GET request
+const versions = await apiClient.get<Collection<BibleVersion>>(
+  '/v1/bibles',
+  { 'language_ranges[]': ['en'] }
+);
+
+// With custom headers
+const data = await apiClient.get('/v1/languages', 
+  { page_size: 10 },
+  { 'X-Custom-Header': 'value' }
+);
+```
+
+### post()
+
+Sends a POST request to the specified API path with optional data and query parameters.
+
+```typescript
+async post<T>(path: string, data?: RequestData, params?: QueryParams): Promise<T>
+```
+
+<ParamField path="path" type="string" required>
+  The API endpoint path relative to the base URL.
+</ParamField>
+
+<ParamField path="data" type="RequestData">
+  Optional request body data to send as JSON.
+  
+  Type: `Record<string, string | number | boolean | object>`
+</ParamField>
+
+<ParamField path="params" type="QueryParams">
+  Optional query parameters to include in the request URL.
+</ParamField>
+
+<ResponseField name="Returns" type="Promise<T>">
+  Promise resolving to the typed response data.
+</ResponseField>
+
+#### Example
+
+```typescript
+import type { Highlight } from '@youversion/platform-core';
+
+// Create a highlight
+const highlight = await apiClient.post<Highlight>(
+  '/v1/highlights',
+  {
+    version_id: 1,
+    passage_id: 'JHN.3.16',
+    color: 'ffff00'
+  },
+  { lat: 'access-token-here' }
+);
+```
+
+### delete()
+
+Sends a DELETE request to the specified API path with optional query parameters.
+
+```typescript
+async delete<T>(path: string, params?: QueryParams): Promise<T>
+```
+
+<ParamField path="path" type="string" required>
+  The API endpoint path relative to the base URL.
+</ParamField>
+
+<ParamField path="params" type="QueryParams">
+  Optional query parameters to include in the request.
+</ParamField>
+
+<ResponseField name="Returns" type="Promise<T>">
+  Promise resolving to the response data (may be void for 204 responses).
+</ResponseField>
+
+#### Example
+
+```typescript
+// Delete a highlight
+await apiClient.delete<void>(
+  '/v1/highlights/JHN.3.16',
+  { 
+    version_id: 1,
+    lat: 'access-token-here' 
+  }
+);
+```
+
+## Request Features
+
+### Automatic Headers
+
+The client automatically includes these headers in every request:
+
+- `Content-Type: application/json`
+- `X-YVP-App-Key: <your-app-key>`
+- `X-YVP-Installation-Id: <installation-id>`
+
+### Timeout Handling
+
+Requests automatically timeout after the configured duration (default 10 seconds):
+
+```typescript
+const client = new ApiClient({
+  appKey: 'key',
+  timeout: 5000, // 5 seconds
+});
+
+try {
+  const data = await client.get('/v1/bibles');
+} catch (error) {
+  // "Request timeout after 5000ms"
+}
+```
+
+### Error Handling
+
+HTTP errors are thrown as `Error` objects with additional properties:
+
+```typescript
+try {
+  const data = await apiClient.get('/v1/invalid-endpoint');
+} catch (error) {
+  if (error instanceof Error) {
+    console.error(error.message);
+    
+    // Access HTTP status
+    const httpError = error as Error & { 
+      status?: number; 
+      statusText?: string;
+    };
+    
+    if (httpError.status === 404) {
+      console.log('Endpoint not found');
+    }
+  }
+}
+```
+
+In development mode (`NODE_ENV=development`), error messages include detailed server responses. In production, error messages are sanitized.
+
+### Query Parameter Arrays
+
+Array values in query parameters are automatically expanded:
+
+```typescript
+// This request:
+await apiClient.get('/v1/bibles', {
+  'language_ranges[]': ['en', 'es', 'fr']
+});
+
+// Becomes: /v1/bibles?language_ranges[]=en&language_ranges[]=es&language_ranges[]=fr
+```
+
+## Type Definitions
+
+### ApiConfig
+
+```typescript client.ts:1
+export interface ApiConfig {
+  apiHost?: string;
+  appKey: string;
+  timeout?: number;
+  installationId?: string;
+}
+```
+
+### QueryParams
+
+```typescript client.ts:4
+type QueryParams = Record<
+  string,
+  string | number | boolean | (string | number | boolean)[]
+>;
+```
+
+### RequestData
+
+```typescript client.ts:5
+type RequestData = Record<string, string | number | boolean | object>;
+```
+
+### RequestHeaders
+
+```typescript client.ts:6
+type RequestHeaders = Record<string, string>;
+```
+
+## Complete Example
+
+```typescript
+import { ApiClient } from '@youversion/platform-core';
+import type { Collection, Language } from '@youversion/platform-core';
+
+// Initialize client
+const apiClient = new ApiClient({
+  appKey: process.env.YOUVERSION_APP_KEY!,
+  timeout: 15000,
+});
+
+// GET request with query params
+const languages = await apiClient.get<Collection<Language>>(
+  '/v1/languages',
+  { 
+    page_size: 50,
+    country: 'US' 
+  }
+);
+
+console.log(`Found ${languages.data.length} languages`);
+
+// Handle pagination
+let nextToken = languages.next_page_token;
+while (nextToken) {
+  const nextPage = await apiClient.get<Collection<Language>>(
+    '/v1/languages',
+    { 
+      page_size: 50,
+      page_token: nextToken 
+    }
+  );
+  
+  console.log(`Next page: ${nextPage.data.length} languages`);
+  nextToken = nextPage.next_page_token;
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Reuse client instances">
+    Create a single `ApiClient` instance and reuse it throughout your application to avoid unnecessary overhead:
+    
+    ```typescript
+    // apiClient.ts
+    export const apiClient = new ApiClient({
+      appKey: process.env.YOUVERSION_APP_KEY!,
+    });
+    
+    // In other files
+    import { apiClient } from './apiClient';
+    const data = await apiClient.get('/v1/languages');
+    ```
+  </Accordion>
+  
+  <Accordion title="Use specialized clients">
+    Instead of calling `ApiClient` methods directly, use the specialized clients that provide type-safe method signatures:
+    
+    ```typescript
+    // ❌ Not recommended
+    const data = await apiClient.get('/v1/bibles/1');
+    
+    // ✅ Recommended
+    const bibleClient = new BibleClient(apiClient);
+    const version = await bibleClient.getVersion(1);
+    ```
+  </Accordion>
+  
+  <Accordion title="Handle errors appropriately">
+    Always wrap API calls in try-catch blocks and handle different error scenarios:
+    
+    ```typescript
+    try {
+      const data = await apiClient.get('/v1/endpoint');
+    } catch (error) {
+      if (error instanceof Error) {
+        const httpError = error as Error & { status?: number };
+        
+        if (httpError.status === 404) {
+          // Handle not found
+        } else if (httpError.status === 429) {
+          // Handle rate limit
+        } else if (error.message.includes('timeout')) {
+          // Handle timeout
+        } else {
+          // Handle other errors
+        }
+      }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Configure appropriate timeouts">
+    Adjust timeout based on expected response times:
+    
+    ```typescript
+    // Fast endpoints
+    const quickClient = new ApiClient({
+      appKey: 'key',
+      timeout: 5000, // 5 seconds
+    });
+    
+    // Slower endpoints or poor network conditions
+    const slowClient = new ApiClient({
+      appKey: 'key',
+      timeout: 30000, // 30 seconds
+    });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+- [BibleClient](/api/core/bible-client) - Bible data operations
+- [LanguagesClient](/api/core/languages-client) - Language data
+- [HighlightsClient](/api/core/highlights-client) - User highlights

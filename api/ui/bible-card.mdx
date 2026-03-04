@@ -1,0 +1,190 @@
+---
+title: BibleCard
+description: Embeddable Bible passage card with optional version picker and attribution
+---
+
+The `BibleCard` component displays a Bible passage in a card format with an optional version picker, loading states, and Bible App attribution.
+
+## Basic Usage
+
+```tsx
+import { BibleCard } from '@youversion/platform-react-ui';
+
+function MyComponent() {
+  return (
+    <BibleCard
+      reference="JHN.3.16-17"
+      versionId={111}
+    />
+  );
+}
+```
+
+## Props
+
+<ParamField path="reference" type="string" required>
+  USFM reference (e.g., "JHN.3.16", "JHN.3.16-17", "JHN.3").
+</ParamField>
+
+<ParamField path="versionId" type="number" required>
+  Initial Bible version ID to display.
+</ParamField>
+
+<ParamField path="background" type="'light' | 'dark'">
+  Theme for the card.
+  
+  Default: Inherits from provider
+</ParamField>
+
+<ParamField path="showVersionPicker" type="boolean">
+  Whether to show the version picker button in the header.
+  
+  Default: `false`
+</ParamField>
+
+## Examples
+
+### Single Verse
+
+```tsx
+<BibleCard
+  reference="JHN.3.16"
+  versionId={111}
+/>
+```
+
+### Verse Range
+
+```tsx
+<BibleCard
+  reference="LUK.1.39-45"
+  versionId={111}
+/>
+```
+
+### With Version Picker
+
+```tsx
+<BibleCard
+  reference="PSA.23"
+  versionId={111}
+  showVersionPicker={true}
+/>
+```
+
+### Dark Theme
+
+```tsx
+<BibleCard
+  reference="JHN.3.16"
+  versionId={111}
+  background="dark"
+/>
+```
+
+### Full Chapter
+
+```tsx
+<BibleCard
+  reference="PHP.4"
+  versionId={111}
+  showVersionPicker={true}
+/>
+```
+
+## Features
+
+### Header
+
+Displays:
+- Passage reference (e.g., "John 3:16-17")
+- Version abbreviation (e.g., "NIV")
+- Loading spinner when refetching
+- Version picker button (if enabled)
+
+### Content
+
+Renders:
+- Bible text with Source Serif font at 16px
+- Verse numbers and footnotes
+- Animated height transitions
+- Error states
+
+### Footer
+
+Shows:
+- Version copyright information
+- Bible App attribution logo
+
+### Loading States
+
+**Initial Load:**
+- Shows loading spinner in header
+- No content displayed
+
+**Refetching (version change):**
+- Small spinner next to reference
+- Content remains visible but faded
+- Smooth transition to new content
+- Delayed spinner (250ms) prevents flashing
+
+### Error Handling
+
+When passage fails to load:
+- Header shows "Error"
+- Error message displayed in content area
+- No copyright or attribution shown
+- Version picker hidden (if it was shown)
+
+### Version Switching
+
+When `showVersionPicker={true}`:
+- Version picker button in header
+- Seamless version switching
+- Maintains same reference
+- Smooth content transitions
+
+### Accessibility
+
+- Semantic HTML structure
+- ARIA labels where appropriate
+- Loading states announced
+- Error states announced with `role="alert"`
+
+## Styling
+
+The card uses:
+- Max width of `28rem` (448px)
+- 1.5rem padding
+- Rounded corners (`rounded-2xl`)
+- Card background color
+- Source Serif font for readability
+
+## Internal State
+
+The component maintains internal state for the version ID:
+
+```tsx
+const [versionNum, setVersionNum] = useState(versionId);
+
+// Initial versionId prop is used as default
+// User selections update internal state
+// Parent component is not notified of changes
+```
+
+This means the card is "uncontrolled" - it manages its own version state after initialization.
+
+## Animation
+
+The `AnimatedHeight` wrapper provides smooth height transitions when:
+- Content loads initially
+- Version changes
+- Error states appear
+
+This prevents jarring layout shifts and provides a polished user experience.
+
+## Related Components
+
+- [BibleTextView](/api/ui/bible-text-view) - Underlying text renderer
+- [BibleVersionPicker](/api/ui/bible-version-picker) - Version selection
+- [VerseOfTheDay](/api/ui/verse-of-the-day) - Daily verse card

@@ -1,0 +1,422 @@
+---
+title: Version Picker
+description: Let users select Bible versions with the BibleVersionPicker component
+---
+
+The `BibleVersionPicker` is a compound component that provides a comprehensive Bible version selection interface with language filtering, search, and recent versions.
+
+## Basic Usage
+
+Create a controlled version picker:
+
+```tsx
+import { useState } from 'react';
+import { BibleVersionPicker } from '@youversion/platform-react-ui';
+
+function BasicVersionPicker() {
+  const [versionId, setVersionId] = useState(111); // NIV
+
+  return (
+    <BibleVersionPicker.Root
+      versionId={versionId}
+      onVersionChange={setVersionId}
+    >
+      <BibleVersionPicker.Trigger />
+      <BibleVersionPicker.Content />
+    </BibleVersionPicker.Root>
+  );
+}
+```
+
+## Custom Trigger Button
+
+Provide your own trigger element:
+
+```tsx
+import { BibleVersionPicker } from '@youversion/platform-react-ui';
+import { Button } from './your-ui-library';
+
+function CustomTrigger() {
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <BibleVersionPicker.Root
+      versionId={versionId}
+      onVersionChange={setVersionId}
+    >
+      <BibleVersionPicker.Trigger>
+        <Button variant="outline">
+          Select Version
+        </Button>
+      </BibleVersionPicker.Trigger>
+      <BibleVersionPicker.Content />
+    </BibleVersionPicker.Root>
+  );
+}
+```
+
+## Render Props Pattern
+
+Access version data in your trigger:
+
+```tsx
+function TriggerWithData() {
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <BibleVersionPicker.Root
+      versionId={versionId}
+      onVersionChange={setVersionId}
+    >
+      <BibleVersionPicker.Trigger>
+        {({ version, loading }) => (
+          <button>
+            {loading 
+              ? 'Loading...' 
+              : version?.localized_abbreviation || 'Select Version'
+            }
+          </button>
+        )}
+      </BibleVersionPicker.Trigger>
+      <BibleVersionPicker.Content />
+    </BibleVersionPicker.Root>
+  );
+}
+```
+
+## Popover Positioning
+
+Control where the popover appears:
+
+<CodeGroup>
+```tsx Top (Default)
+<BibleVersionPicker.Root
+  versionId={versionId}
+  onVersionChange={setVersionId}
+  side="top"
+>
+  <BibleVersionPicker.Trigger />
+  <BibleVersionPicker.Content />
+</BibleVersionPicker.Root>
+```
+
+```tsx Bottom
+<BibleVersionPicker.Root
+  versionId={versionId}
+  onVersionChange={setVersionId}
+  side="bottom"
+>
+  <BibleVersionPicker.Trigger />
+  <BibleVersionPicker.Content />
+</BibleVersionPicker.Root>
+```
+
+```tsx Left/Right
+<BibleVersionPicker.Root
+  versionId={versionId}
+  onVersionChange={setVersionId}
+  side="left"  // or "right"
+>
+  <BibleVersionPicker.Trigger />
+  <BibleVersionPicker.Content />
+</BibleVersionPicker.Root>
+```
+</CodeGroup>
+
+## Features
+
+### Recently Used Versions
+
+The picker automatically tracks recently selected versions (up to 3) in localStorage:
+
+```tsx
+function RecentVersionsExample() {
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <BibleVersionPicker.Root
+      versionId={versionId}
+      onVersionChange={setVersionId}
+    >
+      <BibleVersionPicker.Trigger />
+      <BibleVersionPicker.Content />
+      {/* Recently used versions appear at the top */}
+    </BibleVersionPicker.Root>
+  );
+}
+```
+
+### Search Functionality
+
+Users can search for versions by name or abbreviation:
+
+```tsx
+function SearchableVersionPicker() {
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <BibleVersionPicker.Root
+      versionId={versionId}
+      onVersionChange={setVersionId}
+    >
+      <BibleVersionPicker.Trigger />
+      <BibleVersionPicker.Content />
+      {/* Search input automatically filters versions */}
+    </BibleVersionPicker.Root>
+  );
+}
+```
+
+### Language Selection
+
+Filter versions by language with suggested languages based on user's locale:
+
+```tsx
+function LanguageAwareVersionPicker() {
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <BibleVersionPicker.Root
+      versionId={versionId}
+      onVersionChange={setVersionId}
+    >
+      <BibleVersionPicker.Trigger />
+      <BibleVersionPicker.Content />
+      {/* 
+        - Detects user's browser language
+        - Shows suggested languages (Regional tab)
+        - Allows browsing all languages (All tab)
+      */}
+    </BibleVersionPicker.Root>
+  );
+}
+```
+
+## Theme Support
+
+```tsx
+function ThemedVersionPicker() {
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <BibleVersionPicker.Root
+      versionId={versionId}
+      onVersionChange={setVersionId}
+      background="dark"  // "light" | "dark"
+    >
+      <BibleVersionPicker.Trigger />
+      <BibleVersionPicker.Content />
+    </BibleVersionPicker.Root>
+  );
+}
+```
+
+## Integration with Other Components
+
+### With Bible Reader
+
+```tsx
+import { useState } from 'react';
+import { BibleReader, BibleVersionPicker } from '@youversion/platform-react-ui';
+
+function ReaderWithVersionPicker() {
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <div>
+      {/* Standalone version picker in header */}
+      <header>
+        <BibleVersionPicker.Root
+          versionId={versionId}
+          onVersionChange={setVersionId}
+        >
+          <BibleVersionPicker.Trigger />
+          <BibleVersionPicker.Content />
+        </BibleVersionPicker.Root>
+      </header>
+
+      {/* Reader uses the selected version */}
+      <BibleReader.Root
+        versionId={versionId}
+        onVersionChange={setVersionId}
+      >
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+### With Verse Display
+
+```tsx
+import { useState } from 'react';
+import { BibleTextView, BibleVersionPicker } from '@youversion/platform-react-ui';
+
+function VerseWithVersionPicker() {
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <div>
+      <div style={{ marginBottom: '1rem' }}>
+        <BibleVersionPicker.Root
+          versionId={versionId}
+          onVersionChange={setVersionId}
+        >
+          <BibleVersionPicker.Trigger />
+          <BibleVersionPicker.Content />
+        </BibleVersionPicker.Root>
+      </div>
+
+      <BibleTextView
+        reference="JHN.3.16"
+        versionId={versionId}
+      />
+    </div>
+  );
+}
+```
+
+## Complete Example
+
+Full implementation with all features:
+
+```tsx
+import { useState, useEffect } from 'react';
+import { BibleVersionPicker } from '@youversion/platform-react-ui';
+import { useVersion } from '@youversion/platform-react-hooks';
+
+function CompleteVersionPicker() {
+  const [versionId, setVersionId] = useState(111);
+  const { version } = useVersion(versionId);
+
+  // Log when version changes
+  useEffect(() => {
+    if (version) {
+      console.log('Version changed:', {
+        id: version.id,
+        name: version.title,
+        abbreviation: version.localized_abbreviation,
+      });
+    }
+  }, [version]);
+
+  return (
+    <div className="container">
+      <h2>Select a Bible Version</h2>
+      
+      <div style={{ marginBottom: '2rem' }}>
+        <BibleVersionPicker.Root
+          versionId={versionId}
+          onVersionChange={setVersionId}
+          side="bottom"
+          background="light"
+        >
+          <BibleVersionPicker.Trigger>
+            {({ version, loading }) => (
+              <button
+                style={{
+                  padding: '0.5rem 1rem',
+                  fontSize: '1rem',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  backgroundColor: 'white',
+                  cursor: 'pointer',
+                }}
+              >
+                {loading ? (
+                  'Loading...'
+                ) : (
+                  <>
+                    <strong>{version?.localized_abbreviation}</strong>
+                    {' - '}
+                    {version?.title}
+                  </>
+                )}
+              </button>
+            )}
+          </BibleVersionPicker.Trigger>
+          <BibleVersionPicker.Content />
+        </BibleVersionPicker.Root>
+      </div>
+
+      {version && (
+        <div className="version-info">
+          <h3>Selected Version Details</h3>
+          <dl>
+            <dt>Name:</dt>
+            <dd>{version.title}</dd>
+
+            <dt>Abbreviation:</dt>
+            <dd>{version.localized_abbreviation}</dd>
+
+            <dt>Language:</dt>
+            <dd>{version.language_tag}</dd>
+
+            {version.copyright && (
+              <>
+                <dt>Copyright:</dt>
+                <dd>{version.copyright}</dd>
+              </>
+            )}
+          </dl>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default CompleteVersionPicker;
+```
+
+## Managing Recent Versions
+
+Access and clear recent versions from localStorage:
+
+```tsx
+import { RECENT_VERSIONS_KEY } from '@youversion/platform-react-ui';
+
+function ManageRecentVersions() {
+  const clearRecentVersions = () => {
+    localStorage.removeItem(RECENT_VERSIONS_KEY);
+  };
+
+  return (
+    <div>
+      <BibleVersionPicker.Root versionId={111} onVersionChange={() => {}}>
+        <BibleVersionPicker.Trigger />
+        <BibleVersionPicker.Content />
+      </BibleVersionPicker.Root>
+
+      <button onClick={clearRecentVersions}>
+        Clear Recent Versions
+      </button>
+    </div>
+  );
+}
+```
+
+## Props Reference
+
+### BibleVersionPicker.Root
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `versionId` | `number` | - | Current version ID (required) |
+| `onVersionChange` | `(versionId: number) => void` | - | Version change callback |
+| `background` | `'light' \| 'dark'` | Provider theme | Theme override |
+| `side` | `'top' \| 'right' \| 'bottom' \| 'left'` | `'top'` | Popover position |
+
+### BibleVersionPicker.Trigger
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `children` | `ReactNode \| (props) => ReactNode` | Default button | Custom trigger element |
+| `asChild` | `boolean` | `true` | Merge props with child element |
+
+## Related Components
+
+- [Bible Reader](/examples/bible-reader) - Includes built-in version picker
+- [Verse Display](/examples/verse-display) - Use with selected version
+- [Custom Hooks](/examples/custom-hooks) - Build custom version selection

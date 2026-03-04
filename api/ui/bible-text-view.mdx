@@ -1,0 +1,217 @@
+---
+title: BibleTextView
+description: Display Bible passages with formatted text, verse numbers, and interactive footnotes
+---
+
+The `BibleTextView` component renders Bible text with proper formatting, including verse numbers, footnotes, and support for verse selection and highlighting.
+
+## Basic Usage
+
+```tsx
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function MyComponent() {
+  return (
+    <BibleTextView
+      reference="JHN.3.16"
+      versionId={111}
+    />
+  );
+}
+```
+
+## Props
+
+<ParamField path="reference" type="string" required>
+  USFM reference (e.g., "JHN.3.16", "JHN.3.16-17", "JHN.3")
+</ParamField>
+
+<ParamField path="versionId" type="number" required>
+  Bible version ID (e.g., 111 for NIV)
+</ParamField>
+
+<ParamField path="fontFamily" type="FontFamily">
+  Font family for the Bible text. Can be "Inter", "Source Serif", or a custom font family string.
+  
+  Default: `undefined` (uses theme default)
+</ParamField>
+
+<ParamField path="fontSize" type="number">
+  Font size in pixels.
+  
+  Default: `undefined` (uses theme default)
+</ParamField>
+
+<ParamField path="lineHeight" type="number">
+  Line height as a multiplier (e.g., 1.6).
+  
+  Default: `undefined` (uses theme default)
+</ParamField>
+
+<ParamField path="showVerseNumbers" type="boolean">
+  Whether to display verse numbers.
+  
+  Default: `true`
+</ParamField>
+
+<ParamField path="renderNotes" type="boolean">
+  Whether to render footnote buttons.
+  
+  Default: `true`
+</ParamField>
+
+<ParamField path="theme" type="'light' | 'dark'">
+  Color theme. Overrides the theme from `YouVersionProvider`.
+  
+  Default: Inherits from provider
+</ParamField>
+
+<ParamField path="selectedVerses" type="number[]">
+  Array of selected verse numbers for multi-verse selection.
+  
+  Default: `[]`
+</ParamField>
+
+<ParamField path="onVerseSelect" type="(verses: number[]) => void">
+  Callback when verses are selected/deselected. Enables verse selection mode.
+  
+  Default: `undefined`
+</ParamField>
+
+<ParamField path="highlightedVerses" type="Record<number, boolean>">
+  Object mapping verse numbers to highlight status.
+  
+  Default: `{}`
+</ParamField>
+
+<ParamField path="passageState" type="Partial<BibleTextViewPassageState>">
+  Optional pre-fetched passage data to avoid re-fetching. Useful for custom data loading.
+  
+  ```tsx
+  type BibleTextViewPassageState = {
+    passage: { content: string; reference: string } | null;
+    loading: boolean;
+    error: Error | null;
+  }
+  ```
+  
+  Default: `undefined` (component fetches data)
+</ParamField>
+
+## Examples
+
+### Single Verse
+
+```tsx
+<BibleTextView
+  reference="JHN.3.16"
+  versionId={111}
+  showVerseNumbers={true}
+  renderNotes={true}
+/>
+```
+
+### Verse Range
+
+```tsx
+<BibleTextView
+  reference="JHN.3.16-17"
+  versionId={111}
+/>
+```
+
+### Full Chapter
+
+```tsx
+<BibleTextView
+  reference="JHN.3"
+  versionId={111}
+  fontSize={18}
+  lineHeight={1.8}
+/>
+```
+
+### Verse Selection and Highlighting
+
+```tsx
+import { useState } from 'react';
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function VerseHighlighter() {
+  const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
+  const [highlightedVerses, setHighlightedVerses] = useState<Record<number, boolean>>({});
+
+  const handleHighlight = () => {
+    const newHighlights = { ...highlightedVerses };
+    selectedVerses.forEach(v => newHighlights[v] = true);
+    setHighlightedVerses(newHighlights);
+    setSelectedVerses([]);
+  };
+
+  return (
+    <div>
+      <button onClick={handleHighlight} disabled={selectedVerses.length === 0}>
+        Highlight Selected
+      </button>
+      
+      <BibleTextView
+        reference="JHN.1"
+        versionId={111}
+        selectedVerses={selectedVerses}
+        onVerseSelect={setSelectedVerses}
+        highlightedVerses={highlightedVerses}
+      />
+    </div>
+  );
+}
+```
+
+### Custom Font and Styling
+
+```tsx
+<BibleTextView
+  reference="PSA.23"
+  versionId={111}
+  fontFamily="'Georgia', serif"
+  fontSize={20}
+  lineHeight={2.0}
+  showVerseNumbers={false}
+/>
+```
+
+### Dark Theme
+
+```tsx
+<BibleTextView
+  reference="JHN.3.16"
+  versionId={111}
+  theme="dark"
+/>
+```
+
+## Features
+
+### Interactive Footnotes
+
+When `renderNotes={true}`, footnote buttons appear inline with the text. Clicking a footnote opens a popover showing the note content and verse context.
+
+### Verse Selection
+
+Enable verse selection by providing `onVerseSelect` callback. Users can click verses to select them, and selected verses receive visual highlighting.
+
+### Loading States
+
+The component displays a loading spinner while fetching passage data and shows an error message if the passage is unavailable.
+
+### Accessibility
+
+- Loading state announced with `role="status"`
+- Error state announced with `role="alert"`
+- Footnote popovers properly labeled
+- Keyboard navigation support
+
+## Related Components
+
+- [BibleReader](/api/ui/bible-reader) - Full reading experience with navigation
+- [BibleCard](/api/ui/bible-card) - Embeddable passage card
+- [VerseOfTheDay](/api/ui/verse-of-the-day) - Daily verse display

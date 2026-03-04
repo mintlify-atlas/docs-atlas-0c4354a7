@@ -1,0 +1,288 @@
+---
+title: YouVersionAuthButton
+description: Sign in and sign out button with YouVersion OAuth integration
+---
+
+The `YouVersionAuthButton` component provides a pre-styled button for signing in and out with YouVersion OAuth. It automatically handles authentication flow and displays appropriate content based on auth state.
+
+## Basic Usage
+
+```tsx
+import { YouVersionAuthButton } from '@youversion/platform-react-ui';
+
+function MyComponent() {
+  return (
+    <YouVersionAuthButton
+      onAuthError={(error) => console.error(error)}
+    />
+  );
+}
+```
+
+## Props
+
+<ParamField path="background" type="'light' | 'dark'">
+  Theme for the button.
+  
+  Default: Inherits from provider
+</ParamField>
+
+<ParamField path="mode" type="'signIn' | 'signOut' | 'auto'">
+  Button behavior:
+  - `'signIn'`: Always shows sign in
+  - `'signOut'`: Always shows sign out
+  - `'auto'`: Shows sign in when not authenticated, sign out when authenticated
+  
+  Default: `"auto"`
+</ParamField>
+
+<ParamField path="size" type="'default' | 'short' | 'icon'">
+  Button size variant:
+  - `'default'`: Full text ("Sign in with YouVersion")
+  - `'short'`: Short text ("Sign in")
+  - `'icon'`: Icon only (YouVersion logo)
+  
+  Default: `"default"`
+</ParamField>
+
+<ParamField path="variant" type="'default' | 'outline'">
+  Button style:
+  - `'default'`: Solid background
+  - `'outline'`: Border with transparent background
+  
+  Default: `"default"`
+</ParamField>
+
+<ParamField path="radius" type="'rounded' | 'rectangular'">
+  Corner style:
+  - `'rounded'`: Default rounded corners
+  - `'rectangular'`: More rectangular (0.65rem radius)
+  
+  Default: `"rounded"`
+</ParamField>
+
+<ParamField path="text" type="string">
+  Custom button text. Overrides default text based on `mode` and `size`.
+</ParamField>
+
+<ParamField path="redirectUrl" type="string">
+  OAuth redirect URL. 
+  
+  **Deprecated**: Use `authRedirectUrl` on `YouVersionProvider` instead.
+</ParamField>
+
+<ParamField path="scopes" type="AuthenticationScopes[]">
+  OAuth scopes to request (e.g., `['profile']`).
+  
+  Default: `[]`
+</ParamField>
+
+<ParamField path="onAuthError" type="(error: Error) => void">
+  Callback when authentication fails.
+</ParamField>
+
+<ParamField path="onClick" type="(e: React.MouseEvent<HTMLButtonElement>) => void">
+  Additional click handler (called before auth flow).
+</ParamField>
+
+<ParamField path="disabled" type="boolean">
+  Whether the button is disabled.
+  
+  Default: `false`
+</ParamField>
+
+## Examples
+
+### Auto Mode (Default)
+
+Shows sign in when not authenticated, sign out when authenticated:
+
+```tsx
+<YouVersionAuthButton
+  onAuthError={(error) => console.error(error)}
+/>
+```
+
+### Sign In Only
+
+```tsx
+<YouVersionAuthButton
+  mode="signIn"
+  onAuthError={(error) => console.error(error)}
+/>
+```
+
+### Sign Out Only
+
+```tsx
+<YouVersionAuthButton
+  mode="signOut"
+  onAuthError={(error) => console.error(error)}
+/>
+```
+
+### Short Size
+
+```tsx
+<YouVersionAuthButton
+  size="short"
+  onAuthError={(error) => console.error(error)}
+/>
+```
+
+### Icon Only
+
+```tsx
+<YouVersionAuthButton
+  size="icon"
+  onAuthError={(error) => console.error(error)}
+/>
+```
+
+### Outline Variant
+
+```tsx
+<YouVersionAuthButton
+  variant="outline"
+  onAuthError={(error) => console.error(error)}
+/>
+```
+
+### Rectangular Corners
+
+```tsx
+<YouVersionAuthButton
+  radius="rectangular"
+  onAuthError={(error) => console.error(error)}
+/>
+```
+
+### Dark Theme
+
+```tsx
+<YouVersionAuthButton
+  background="dark"
+  onAuthError={(error) => console.error(error)}
+/>
+```
+
+### Custom Text
+
+```tsx
+<YouVersionAuthButton
+  text="Login to Continue"
+  onAuthError={(error) => console.error(error)}
+/>
+```
+
+### With Scopes
+
+```tsx
+<YouVersionAuthButton
+  scopes={['profile']}
+  onAuthError={(error) => console.error(error)}
+/>
+```
+
+### All Options Combined
+
+```tsx
+<YouVersionAuthButton
+  mode="auto"
+  size="short"
+  variant="outline"
+  radius="rectangular"
+  background="dark"
+  scopes={['profile']}
+  onAuthError={(error) => {
+    console.error('Auth failed:', error);
+    // Show error toast
+  }}
+/>
+```
+
+## Button Text
+
+The button displays different text based on `mode`, `size`, and auth state:
+
+| Mode | Size | Not Authenticated | Authenticated |
+|------|------|------------------|---------------|
+| `auto` | `default` | "Sign in with **YouVersion**" | "Sign out of **YouVersion**" |
+| `auto` | `short` | "Sign in" | "Sign out" |
+| `auto` | `icon` | (icon only) | (icon only) |
+| `signIn` | `default` | "Sign in with **YouVersion**" | "Sign in with **YouVersion**" |
+| `signIn` | `short` | "Sign in" | "Sign in" |
+| `signOut` | `default` | "Sign out of **YouVersion**" | "Sign out of **YouVersion**" |
+| `signOut` | `short` | "Sign out" | "Sign out" |
+
+The `text` prop overrides all default text.
+
+## Loading State
+
+When authentication is in progress:
+- Button shows loading spinner overlay
+- Button is disabled
+- Text remains visible but faded
+
+## Authentication Flow
+
+### Sign In
+
+1. User clicks button
+2. `signIn()` is called with scopes and redirect URL
+3. User is redirected to YouVersion OAuth
+4. After approval, redirected back to `authRedirectUrl`
+5. Access token stored in auth provider
+
+### Sign Out
+
+1. User clicks button
+2. `signOut()` is called
+3. Auth state cleared
+4. User shown as signed out
+
+## Error Handling
+
+Provide `onAuthError` to handle authentication errors:
+
+```tsx
+<YouVersionAuthButton
+  onAuthError={(error) => {
+    if (error.message.includes('popup')) {
+      showToast('Please allow popups for sign in');
+    } else {
+      showToast('Sign in failed. Please try again.');
+    }
+  }}
+/>
+```
+
+## Accessibility
+
+- Button uses semantic `<button>` element
+- Loading state announced to screen readers
+- Icon-only variant has `sr-only` text
+- Disabled state properly handled
+
+## Styling
+
+The button includes:
+- YouVersion logo icon
+- Customizable colors via theme
+- Border color based on theme
+- Shadow effects
+- Hover and active states
+- Loading spinner overlay
+
+## Related Hooks
+
+- [useYVAuth](/api/hooks/auth-hooks) - Access auth state and methods
+- [YouVersionProvider](/api/hooks/providers) - Configure authentication
+
+## Best Practices
+
+1. **Always provide `onAuthError`** to handle edge cases
+2. **Use `auto` mode** for most cases (handles both states)
+3. **Use `icon` size** in compact UIs like toolbars
+4. **Test sign-out flow** - ensure users can sign back in
+5. **Configure redirectUrl on provider** instead of each button

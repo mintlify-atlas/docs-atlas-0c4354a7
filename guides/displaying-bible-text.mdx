@@ -1,0 +1,253 @@
+---
+title: "Displaying Bible Text"
+description: "Learn how to display Bible verses and passages using the YouVersion Platform React SDK"
+---
+
+The YouVersion Platform React SDK provides powerful components for displaying formatted Bible text with features like verse numbers, footnotes, and customizable styling.
+
+## BibleTextView Component
+
+The `BibleTextView` component is the primary way to display Bible passages. It automatically fetches and renders Bible text with proper formatting.
+
+### Basic Usage
+
+```tsx
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function MyComponent() {
+  return (
+    <BibleTextView
+      reference="JHN.3.16"    // USFM format: BOOK.CHAPTER.VERSE
+      versionId={3034}        // Bible version ID (3034 = Berean Standard Bible)
+    />
+  );
+}
+```
+
+<Info>
+References use **USFM format**: `BOOK.CHAPTER.VERSE`. For example:
+- `JHN.3.16` - John 3:16
+- `GEN.1.1-5` - Genesis 1:1-5
+- `PSA.23` - Psalm 23 (entire chapter)
+</Info>
+
+### Customizing Appearance
+
+The `BibleTextView` component supports extensive customization:
+
+```tsx
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function CustomizedPassage() {
+  return (
+    <BibleTextView
+      reference="JHN.3.16-17"
+      versionId={3034}
+      fontSize={18}                    // Font size in pixels
+      lineHeight={1.8}                 // Line height multiplier
+      fontFamily='"Source Serif 4", serif'  // Custom font family
+      showVerseNumbers={true}          // Show/hide verse numbers
+      renderNotes={true}               // Show/hide footnotes
+      theme="light"                    // "light" or "dark"
+    />
+  );
+}
+```
+
+### Font Options
+
+Two pre-configured fonts are available:
+
+```tsx
+import { INTER_FONT, SOURCE_SERIF_FONT } from '@youversion/platform-react-ui';
+
+// Sans-serif font (modern)
+<BibleTextView
+  reference="JHN.3.16"
+  versionId={3034}
+  fontFamily={INTER_FONT}  // "Inter", sans-serif
+/>
+
+// Serif font (traditional)
+<BibleTextView
+  reference="JHN.3.16"
+  versionId={3034}
+  fontFamily={SOURCE_SERIF_FONT}  // "Source Serif 4", serif
+/>
+```
+
+## Verse Component
+
+For simple, inline verse display without data fetching, use the `Verse.Text` component:
+
+```tsx
+import { Verse } from '@youversion/platform-react-ui';
+
+function SimpleVerse() {
+  return (
+    <Verse.Text
+      number={16}
+      text="For God so loved the world that he gave his one and only Son..."
+      size="default"  // "default" or "lg"
+    />
+  );
+}
+```
+
+### Rendering HTML Content
+
+If you already have passage HTML (from the `usePassage` hook), use `Verse.Html`:
+
+```tsx
+import { Verse } from '@youversion/platform-react-ui';
+import { usePassage } from '@youversion/platform-react-hooks';
+
+function PassageWithHtml() {
+  const { passage } = usePassage({
+    versionId: 3034,
+    usfm: 'JHN.3.16',
+    include_headings: true,
+    include_notes: true,
+  });
+
+  if (!passage) return <div>Loading...</div>;
+
+  return (
+    <Verse.Html
+      html={passage.content}
+      fontSize={16}
+      showVerseNumbers={true}
+      renderNotes={true}
+    />
+  );
+}
+```
+
+## Loading States and Error Handling
+
+`BibleTextView` handles loading and error states automatically:
+
+```tsx
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function RobustPassageDisplay() {
+  return (
+    <BibleTextView
+      reference="JHN.3.16"
+      versionId={3034}
+      // Shows a spinner while loading
+      // Shows "Your previously selected Bible verse is unavailable" on error
+    />
+  );
+}
+```
+
+<Note>
+The component displays a loading spinner during initial fetch and shows an error message if the passage is unavailable in the selected version.
+</Note>
+
+## Advanced: Using Custom Passage State
+
+For advanced use cases where you're managing data fetching separately:
+
+```tsx
+import { BibleTextView } from '@youversion/platform-react-ui';
+import { usePassage } from '@youversion/platform-react-hooks';
+
+function AdvancedPassageDisplay() {
+  const { passage, loading, error } = usePassage({
+    versionId: 3034,
+    usfm: 'JHN.3.16',
+    include_headings: true,
+    include_notes: true,
+  });
+
+  return (
+    <BibleTextView
+      reference="JHN.3.16"
+      versionId={3034}
+      passageState={{ passage, loading, error }}  // Override internal fetching
+    />
+  );
+}
+```
+
+## Verse Selection and Highlighting
+
+`BibleTextView` supports interactive verse selection:
+
+```tsx
+import { useState } from 'react';
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function SelectablePassage() {
+  const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
+  const [highlightedVerses, setHighlightedVerses] = useState<Record<number, boolean>>({});
+
+  return (
+    <div>
+      <BibleTextView
+        reference="JHN.3"
+        versionId={3034}
+        selectedVerses={selectedVerses}           // Array of selected verse numbers
+        onVerseSelect={setSelectedVerses}         // Callback when verses are clicked
+        highlightedVerses={highlightedVerses}     // Object with verse numbers as keys
+      />
+
+      <p>Selected verses: {selectedVerses.join(', ')}</p>
+    </div>
+  );
+}
+```
+
+## Complete Example
+
+Here's a comprehensive example combining multiple features:
+
+```tsx
+import { useState } from 'react';
+import { BibleTextView, SOURCE_SERIF_FONT } from '@youversion/platform-react-ui';
+
+function CompleteBibleTextExample() {
+  const [reference, setReference] = useState('JHN.3.16-17');
+  const [versionId, setVersionId] = useState(3034);
+  const [fontSize, setFontSize] = useState(16);
+
+  return (
+    <div>
+      {/* Controls */}
+      <div style={{ marginBottom: '1rem' }}>
+        <button onClick={() => setFontSize(f => Math.min(f + 2, 24))}>
+          Increase Font
+        </button>
+        <button onClick={() => setFontSize(f => Math.max(f - 2, 12))}>
+          Decrease Font
+        </button>
+      </div>
+
+      {/* Bible Text Display */}
+      <BibleTextView
+        reference={reference}
+        versionId={versionId}
+        fontSize={fontSize}
+        lineHeight={1.6}
+        fontFamily={SOURCE_SERIF_FONT}
+        showVerseNumbers={true}
+        renderNotes={true}
+        theme="light"
+      />
+    </div>
+  );
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Fetching Data" icon="database" href="/guides/fetching-data">
+    Learn how to fetch Bible data using hooks
+  </Card>
+  <Card title="Building a Reader" icon="book-open" href="/guides/building-a-reader">
+    Create a complete Bible reading experience
+  </Card>
+</CardGroup>

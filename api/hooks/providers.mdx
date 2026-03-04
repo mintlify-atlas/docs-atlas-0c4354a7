@@ -1,0 +1,439 @@
+---
+title: Providers
+description: Context providers for SDK configuration and state management
+---
+
+Providers are React Context components that manage configuration and state across your application. All data hooks depend on these providers to function correctly.
+
+## YouVersionProvider
+
+The core provider that configures the SDK and must wrap your entire application.
+
+### Props
+
+<ParamField path="appKey" type="string" required>
+  Your YouVersion Platform API key
+</ParamField>
+
+<ParamField path="apiHost" type="string" default="api.youversion.com">
+  The API host URL (rarely needs to be changed)
+</ParamField>
+
+<ParamField path="theme" type="'light' | 'dark' | 'system'" default="light">
+  Theme preference for the SDK. When set to `'system'`, automatically follows the user's system color scheme preference.
+</ParamField>
+
+<ParamField path="includeAuth" type="boolean" default={false}>
+  Enable authentication functionality. When `true`, must also provide `authRedirectUrl`.
+</ParamField>
+
+<ParamField path="authRedirectUrl" type="string">
+  OAuth callback URL (required when `includeAuth` is `true`)
+</ParamField>
+
+<ParamField path="children" type="ReactNode" required>
+  Your application components
+</ParamField>
+
+### Features
+
+- Automatically generates and manages installation ID
+- Syncs configuration with `YouVersionPlatformConfiguration` from core package
+- Lazy-loads authentication provider when `includeAuth` is enabled
+- Automatically resolves system theme preference
+- Listens for system theme changes when `theme="system"`
+
+### Usage
+
+<CodeGroup>
+```tsx Basic Setup
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+
+function App() {
+  return (
+    <YouVersionProvider appKey="your-app-key">
+      <YourApp />
+    </YouVersionProvider>
+  );
+}
+```
+
+```tsx With Theme
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+
+function App() {
+  return (
+    <YouVersionProvider 
+      appKey="your-app-key" 
+      theme="dark"
+    >
+      <YourApp />
+    </YouVersionProvider>
+  );
+}
+```
+
+```tsx With System Theme
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+
+function App() {
+  return (
+    <YouVersionProvider 
+      appKey="your-app-key" 
+      theme="system"  // Follows system preference
+    >
+      <YourApp />
+    </YouVersionProvider>
+  );
+}
+```
+
+```tsx With Authentication
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+
+function App() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      includeAuth={true}
+      authRedirectUrl="https://myapp.com/callback"
+    >
+      <YourApp />
+    </YouVersionProvider>
+  );
+}
+```
+</CodeGroup>
+
+### Context Value
+
+The provider exposes the following context value:
+
+<ResponseField name="appKey" type="string">
+  The API key provided to the provider
+</ResponseField>
+
+<ResponseField name="apiHost" type="string">
+  The API host URL
+</ResponseField>
+
+<ResponseField name="installationId" type="string">
+  Auto-generated installation identifier
+</ResponseField>
+
+<ResponseField name="theme" type="'light' | 'dark'">
+  Resolved theme (never returns `'system'`, always resolved to actual theme)
+</ResponseField>
+
+<ResponseField name="authEnabled" type="boolean">
+  Whether authentication is enabled
+</ResponseField>
+
+---
+
+## ReaderProvider
+
+Manages Bible reading session state, including current version, book, chapter, and verse.
+
+### Props
+
+<ParamField path="currentVersion" type="BibleVersion" required>
+  Initial Bible version
+</ParamField>
+
+<ParamField path="currentBook" type="BibleBook" required>
+  Initial Bible book
+</ParamField>
+
+<ParamField path="currentChapter" type="BibleChapter" required>
+  Initial chapter
+</ParamField>
+
+<ParamField path="currentVerse" type="BibleVerse | null" required>
+  Initial verse (or `null` if no specific verse)
+</ParamField>
+
+<ParamField path="children" type="ReactNode" required>
+  Child components
+</ParamField>
+
+### Usage
+
+```tsx
+import { ReaderProvider } from '@youversion/platform-react-hooks';
+
+function MyReader({ version, book, chapter }) {
+  return (
+    <ReaderProvider
+      currentVersion={version}
+      currentBook={book}
+      currentChapter={chapter}
+      currentVerse={null}
+    >
+      <ChapterReader />
+      <ChapterNavigation />
+    </ReaderProvider>
+  );
+}
+```
+
+### Context Value
+
+<ResponseField name="currentVersion" type="BibleVersion">
+  Current Bible version
+</ResponseField>
+
+<ResponseField name="currentBook" type="BibleBook">
+  Current Bible book
+</ResponseField>
+
+<ResponseField name="currentChapter" type="BibleChapter">
+  Current chapter
+</ResponseField>
+
+<ResponseField name="currentVerse" type="BibleVerse | null">
+  Current verse or null
+</ResponseField>
+
+<ResponseField name="setVersion" type="(version: BibleVersion) => void">
+  Update current version
+</ResponseField>
+
+<ResponseField name="setBook" type="(book: BibleBook) => void">
+  Update current book
+</ResponseField>
+
+<ResponseField name="setChapter" type="(chapter: BibleChapter) => void">
+  Update current chapter
+</ResponseField>
+
+<ResponseField name="setVerse" type="(verse: BibleVerse | null) => void">
+  Update current verse
+</ResponseField>
+
+### Accessing Context
+
+Use the `useReaderContext` hook to access the reader state:
+
+```tsx
+import { useReaderContext } from '@youversion/platform-react-hooks';
+
+function CurrentReference() {
+  const { currentBook, currentChapter, currentVersion } = useReaderContext();
+  
+  return (
+    <div>
+      {currentVersion.abbreviation} {currentBook.human_reference} {currentChapter.number}
+    </div>
+  );
+}
+```
+
+---
+
+## VerseSelectionProvider
+
+Manages multi-verse selection state for highlighting or copying multiple verses.
+
+### Props
+
+<ParamField path="children" type="ReactNode" required>
+  Child components
+</ParamField>
+
+### Usage
+
+```tsx
+import { VerseSelectionProvider } from '@youversion/platform-react-hooks';
+
+function ChapterWithSelection() {
+  return (
+    <VerseSelectionProvider>
+      <ChapterContent />
+      <VerseActions />
+    </VerseSelectionProvider>
+  );
+}
+```
+
+### Context Value
+
+<ResponseField name="selectedVerseUsfms" type="Set<string>">
+  Set of selected verse USFM identifiers
+</ResponseField>
+
+<ResponseField name="toggleVerse" type="(usfm: string) => void">
+  Toggle verse selection state
+</ResponseField>
+
+<ResponseField name="isSelected" type="(usfm: string) => boolean">
+  Check if a verse is selected
+</ResponseField>
+
+<ResponseField name="clearSelection" type="() => void">
+  Clear all selected verses
+</ResponseField>
+
+<ResponseField name="selectedCount" type="number">
+  Number of currently selected verses
+</ResponseField>
+
+### Accessing Context
+
+Use the `useVerseSelection` hook:
+
+```tsx
+import { useVerseSelection } from '@youversion/platform-react-hooks';
+
+function VerseComponent({ usfm }) {
+  const { isSelected, toggleVerse } = useVerseSelection();
+  
+  return (
+    <div 
+      onClick={() => toggleVerse(usfm)}
+      className={isSelected(usfm) ? 'selected' : ''}
+    >
+      Verse content
+    </div>
+  );
+}
+
+function SelectionActions() {
+  const { selectedCount, clearSelection } = useVerseSelection();
+  
+  if (selectedCount === 0) return null;
+  
+  return (
+    <div>
+      {selectedCount} verse(s) selected
+      <button onClick={clearSelection}>Clear</button>
+    </div>
+  );
+}
+```
+
+---
+
+## YouVersionAuthProvider
+
+<Warning>
+  This provider is automatically included when you set `includeAuth={true}` on `YouVersionProvider`. You should not use it directly.
+</Warning>
+
+Manages authentication state including user info, tokens, and OAuth callback processing. Lazy-loaded only when authentication is enabled.
+
+### Features
+
+- Automatically handles OAuth callback processing
+- Manages token refresh
+- Caches user information
+- Syncs with `YouVersionPlatformConfiguration`
+
+### How It Works
+
+1. When `YouVersionProvider` has `includeAuth={true}`, it lazy-loads `YouVersionAuthProvider`
+2. The auth provider checks for existing refresh tokens on mount
+3. If on OAuth callback page, processes the callback and caches user info
+4. Provides auth state and user info to `useYVAuth` hook
+
+### Props (Internal)
+
+<ParamField path="config" type="AuthConfig" required>
+  Configuration object with `appKey`, `apiHost`, and `redirectUri`
+</ParamField>
+
+<ParamField path="children" type="ReactNode" required>
+  Child components
+</ParamField>
+
+---
+
+## Provider Nesting
+
+Providers can be nested to combine functionality:
+
+```tsx
+import { 
+  YouVersionProvider, 
+  ReaderProvider,
+  VerseSelectionProvider 
+} from '@youversion/platform-react-hooks';
+
+function App() {
+  return (
+    <YouVersionProvider appKey="your-key" includeAuth>
+      <ReaderProvider 
+        currentVersion={version}
+        currentBook={book}
+        currentChapter={chapter}
+        currentVerse={null}
+      >
+        <VerseSelectionProvider>
+          <BibleReader />
+        </VerseSelectionProvider>
+      </ReaderProvider>
+    </YouVersionProvider>
+  );
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Place YouVersionProvider at the root">
+    `YouVersionProvider` should wrap your entire application at the root level:
+    
+    ```tsx
+    // ✅ Good - at root level
+    <YouVersionProvider appKey="key">
+      <App />
+    </YouVersionProvider>
+    
+    // ❌ Bad - nested too deep
+    <App>
+      <SomeComponent>
+        <YouVersionProvider appKey="key">
+          <Reader />
+        </YouVersionProvider>
+      </SomeComponent>
+    </App>
+    ```
+  </Accordion>
+  
+  <Accordion title="Use ReaderProvider per reader instance">
+    If you have multiple readers on the same page, use separate `ReaderProvider` instances:
+    
+    ```tsx
+    <YouVersionProvider appKey="key">
+      <div className="readers">
+        <ReaderProvider currentVersion={v1} currentBook={b1} currentChapter={c1} currentVerse={null}>
+          <Reader />
+        </ReaderProvider>
+        
+        <ReaderProvider currentVersion={v2} currentBook={b2} currentChapter={c2} currentVerse={null}>
+          <Reader />
+        </ReaderProvider>
+      </div>
+    </YouVersionProvider>
+    ```
+  </Accordion>
+  
+  <Accordion title="Scope VerseSelectionProvider appropriately">
+    Place `VerseSelectionProvider` around the components that need selection state:
+    
+    ```tsx
+    // ✅ Good - scoped to chapter view
+    <ChapterView>
+      <VerseSelectionProvider>
+        <VerseList />
+        <SelectionToolbar />
+      </VerseSelectionProvider>
+    </ChapterView>
+    
+    // ❌ Unnecessary - too broad if only one component uses it
+    <VerseSelectionProvider>
+      <App />
+    </VerseSelectionProvider>
+    ```
+  </Accordion>
+</AccordionGroup>

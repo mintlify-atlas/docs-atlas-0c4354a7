@@ -1,0 +1,519 @@
+---
+title: "Styling Components"
+description: "Customize the appearance of YouVersion Platform SDK components to match your brand"
+---
+
+The YouVersion Platform SDK components are designed to be flexible and customizable while maintaining accessibility and consistent behavior. This guide covers styling approaches and customization options.
+
+## Theming System
+
+All SDK components support light and dark themes out of the box.
+
+### Setting Theme via Provider
+
+Control theme at the app level:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+
+function App() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      theme="light"  // "light" or "dark"
+    >
+      <YourApp />
+    </YouVersionProvider>
+  );
+}
+```
+
+### Dynamic Theme Switching
+
+Switch themes based on user preference or system settings:
+
+```tsx
+import { useState, useEffect } from 'react';
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+
+function App() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Detect system preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setTheme(mediaQuery.matches ? 'dark' : 'light');
+
+    const handler = (e: MediaQueryListEvent) => {
+      setTheme(e.matches ? 'dark' : 'light');
+    };
+
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  return (
+    <YouVersionProvider appKey="your-app-key" theme={theme}>
+      <YourApp />
+      <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}>
+        Toggle Theme
+      </button>
+    </YouVersionProvider>
+  );
+}
+```
+
+### Component-Level Theme Override
+
+Override theme for specific components:
+
+```tsx
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function MixedThemeExample() {
+  return (
+    <div>
+      {/* Uses provider theme */}
+      <BibleTextView reference="JHN.3.16" versionId={3034} />
+
+      {/* Force light theme */}
+      <BibleTextView reference="PSA.23.1" versionId={3034} theme="light" />
+
+      {/* Force dark theme */}
+      <BibleTextView reference="GEN.1.1" versionId={3034} theme="dark" />
+    </div>
+  );
+}
+```
+
+## Typography Customization
+
+### Font Families
+
+The SDK provides two built-in fonts:
+
+```tsx
+import {
+  BibleTextView,
+  SOURCE_SERIF_FONT,
+  INTER_FONT,
+} from '@youversion/platform-react-ui';
+
+// Serif font (traditional, highly readable)
+<BibleTextView
+  reference="JHN.3.16"
+  versionId={3034}
+  fontFamily={SOURCE_SERIF_FONT}
+/>
+
+// Sans-serif font (modern, clean)
+<BibleTextView
+  reference="JHN.3.16"
+  versionId={3034}
+  fontFamily={INTER_FONT}
+/>
+
+// Custom font
+<BibleTextView
+  reference="JHN.3.16"
+  versionId={3034}
+  fontFamily='"Georgia", serif'
+/>
+```
+
+### Font Sizing
+
+Control text size for optimal readability:
+
+```tsx
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+// Small text
+<BibleTextView reference="JHN.3.16" versionId={3034} fontSize={14} />
+
+// Default size
+<BibleTextView reference="JHN.3.16" versionId={3034} fontSize={16} />
+
+// Large text
+<BibleTextView reference="JHN.3.16" versionId={3034} fontSize={20} />
+
+// Extra large (accessibility)
+<BibleTextView reference="JHN.3.16" versionId={3034} fontSize={24} />
+```
+
+### Line Height
+
+Adjust spacing between lines:
+
+```tsx
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+// Compact (1.4)
+<BibleTextView reference="JHN.3.16" versionId={3034} lineHeight={1.4} />
+
+// Default (1.6)
+<BibleTextView reference="JHN.3.16" versionId={3034} lineHeight={1.6} />
+
+// Spacious (2.0)
+<BibleTextView reference="JHN.3.16" versionId={3034} lineHeight={2.0} />
+```
+
+## Customizing Bible Reader
+
+The `BibleReader` component accepts comprehensive styling props:
+
+```tsx
+import { BibleReader, SOURCE_SERIF_FONT } from '@youversion/platform-react-ui';
+
+function CustomReader() {
+  return (
+    <div style={{ height: '100vh' }}>
+      <BibleReader.Root
+        defaultBook="JHN"
+        defaultChapter="3"
+        defaultVersionId={3034}
+        fontFamily={SOURCE_SERIF_FONT}
+        fontSize={18}
+        lineHeight={1.8}
+        showVerseNumbers={true}
+        background="light"
+      >
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+## Tailwind CSS Scoping
+
+All SDK components use the `yv:` prefix for Tailwind classes to prevent conflicts with your app's styles.
+
+### Understanding the Prefix
+
+```tsx
+// SDK components use yv: prefix internally
+<div className="yv:bg-background yv:text-foreground yv:p-4">
+  {/* Your content */}
+</div>
+
+// Your app uses standard classes
+<div className="bg-white text-black p-4">
+  {/* Your content */}
+</div>
+```
+
+<Info>
+The `yv:` prefix prevents style collisions. You don't need to add this prefix yourself - it's applied automatically by SDK components.
+</Info>
+
+## CSS Variables and Custom Styling
+
+The reader uses CSS variables that you can override:
+
+```tsx
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function CustomStyledReader() {
+  return (
+    <div
+      style={{
+        height: '100vh',
+        // Override CSS variables
+        '--yv-reader-font-family': '"Georgia", serif',
+        '--yv-reader-font-size': '18px',
+        '--yv-reader-line-height': '1.8',
+      } as React.CSSProperties}
+    >
+      <BibleReader.Root defaultBook="JHN" defaultChapter="3" defaultVersionId={3034}>
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+### Available CSS Variables
+
+- `--yv-reader-font-family`: Font stack for Bible text
+- `--yv-reader-font-size`: Base font size
+- `--yv-reader-line-height`: Line height multiplier
+
+## Component-Specific Styling
+
+### Verse of the Day
+
+```tsx
+import { VerseOfTheDay } from '@youversion/platform-react-ui';
+
+function StyledVOTD() {
+  return (
+    <VerseOfTheDay
+      versionId={3034}
+      background="light"
+      size="lg"              // "default" or "lg"
+      showSunIcon={true}
+      showShareButton={true}
+      showBibleAppAttribution={true}
+    />
+  );
+}
+```
+
+### Bible Card
+
+```tsx
+import { BibleCard } from '@youversion/platform-react-ui';
+
+function StyledCard() {
+  return (
+    <BibleCard
+      reference="JHN.3.16-17"
+      versionId={3034}
+      background="dark"           // Match your app theme
+      showVersionPicker={true}
+    />
+  );
+}
+```
+
+## Responsive Design
+
+SDK components are responsive by default:
+
+```tsx
+import { BibleTextView } from '@youversion/platform-react-ui';
+import { useState, useEffect } from 'react';
+
+function ResponsiveBibleText() {
+  const [fontSize, setFontSize] = useState(16);
+
+  useEffect(() => {
+    const updateSize = () => {
+      // Smaller font on mobile
+      setFontSize(window.innerWidth < 640 ? 14 : 16);
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
+  return (
+    <BibleTextView
+      reference="JHN.3.16"
+      versionId={3034}
+      fontSize={fontSize}
+    />
+  );
+}
+```
+
+## Accessibility Considerations
+
+### Contrast Ratios
+
+The SDK's theme system ensures WCAG AA compliance for text contrast.
+
+```tsx
+// Light theme: Dark text on light background
+<BibleTextView reference="JHN.3.16" versionId={3034} theme="light" />
+
+// Dark theme: Light text on dark background
+<BibleTextView reference="JHN.3.16" versionId={3034} theme="dark" />
+```
+
+### Font Size for Accessibility
+
+Support users who need larger text:
+
+```tsx
+import { useState } from 'react';
+import { BibleTextView } from '@youversion/platform-react-ui';
+
+function AccessibleReader() {
+  const [fontSize, setFontSize] = useState(16);
+
+  return (
+    <div>
+      <div>
+        <button onClick={() => setFontSize(s => Math.max(12, s - 2))}>
+          Decrease Text Size
+        </button>
+        <button onClick={() => setFontSize(s => Math.min(32, s + 2))}>
+          Increase Text Size
+        </button>
+      </div>
+
+      <BibleTextView
+        reference="JHN.3.16"
+        versionId={3034}
+        fontSize={fontSize}
+        lineHeight={1.6}
+      />
+    </div>
+  );
+}
+```
+
+## Complete Styling Example
+
+Here's a fully customized implementation:
+
+```tsx
+import { useState, useEffect } from 'react';
+import {
+  YouVersionProvider,
+  useTheme,
+} from '@youversion/platform-react-hooks';
+import {
+  BibleReader,
+  SOURCE_SERIF_FONT,
+  INTER_FONT,
+} from '@youversion/platform-react-ui';
+
+function CustomThemedApp() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [fontFamily, setFontFamily] = useState(SOURCE_SERIF_FONT);
+  const [fontSize, setFontSize] = useState(16);
+
+  // Sync with system preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setTheme(mediaQuery.matches ? 'dark' : 'light');
+  }, []);
+
+  return (
+    <YouVersionProvider appKey="your-app-key" theme={theme}>
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {/* Custom controls */}
+        <header style={{ padding: '1rem', borderBottom: '1px solid #ccc' }}>
+          <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}>
+            Toggle {theme === 'light' ? 'Dark' : 'Light'} Mode
+          </button>
+
+          <button onClick={() => setFontFamily(
+            f => f === SOURCE_SERIF_FONT ? INTER_FONT : SOURCE_SERIF_FONT
+          )}>
+            Toggle Font (Currently: {fontFamily === SOURCE_SERIF_FONT ? 'Serif' : 'Sans'})
+          </button>
+
+          <button onClick={() => setFontSize(s => Math.max(12, s - 2))}>
+            A-
+          </button>
+          <button onClick={() => setFontSize(s => Math.min(24, s + 2))}>
+            A+
+          </button>
+          <span>Size: {fontSize}px</span>
+        </header>
+
+        {/* Bible Reader */}
+        <div style={{ flex: 1 }}>
+          <BibleReader.Root
+            defaultBook="JHN"
+            defaultChapter="3"
+            defaultVersionId={3034}
+            fontFamily={fontFamily}
+            fontSize={fontSize}
+            lineHeight={1.6}
+            background={theme}
+          >
+            <BibleReader.Content />
+            <BibleReader.Toolbar />
+          </BibleReader.Root>
+        </div>
+      </div>
+    </YouVersionProvider>
+  );
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Semantic Theme Props">
+    Prefer theme props over direct color values:
+
+    ```tsx
+    // ✅ Good - uses theme system
+    <BibleTextView theme="light" />
+
+    // ❌ Avoid - bypasses theme system
+    <div style={{ color: '#000' }}>
+      <BibleTextView />
+    </div>
+    ```
+  </Accordion>
+
+  <Accordion title="Respect User Preferences">
+    Honor system dark mode and accessibility settings:
+
+    ```tsx
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    ```
+  </Accordion>
+
+  <Accordion title="Test with Different Font Sizes">
+    Ensure your layout works at various font sizes:
+
+    ```tsx
+    // Test at minimum (12px)
+    <BibleTextView fontSize={12} />
+
+    // Test at maximum (24px)
+    <BibleTextView fontSize={24} />
+    ```
+  </Accordion>
+
+  <Accordion title="Maintain Sufficient Contrast">
+    Use the built-in themes which guarantee WCAG AA compliance, or test custom colors:
+
+    ```tsx
+    // ✅ Good - uses built-in theme colors
+    <BibleTextView theme="light" />
+
+    // ⚠️  If using custom CSS, verify contrast ratios
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+### Styles Not Applying
+
+1. Verify the `YouVersionProvider` wraps your component
+2. Check that you're not overriding SDK styles with higher specificity CSS
+3. Ensure the component receives the theme prop
+
+### Theme Not Switching
+
+1. Confirm theme prop is passed to provider or component
+2. Check for component-level theme overrides
+3. Verify theme value is exactly `"light"` or `"dark"`
+
+### Font Not Changing
+
+Make sure the font family string is valid:
+
+```tsx
+// ✅ Good
+fontFamily='"Source Serif 4", serif'
+fontFamily={SOURCE_SERIF_FONT}
+
+// ❌ Bad - missing quotes for multi-word font names
+fontFamily='Source Serif 4, serif'
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Building a Reader" icon="book-open" href="/guides/building-a-reader">
+    Create a complete reading experience
+  </Card>
+  <Card title="Displaying Bible Text" icon="book" href="/guides/displaying-bible-text">
+    Learn about text rendering options
+  </Card>
+</CardGroup>

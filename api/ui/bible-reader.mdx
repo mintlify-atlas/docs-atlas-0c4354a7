@@ -1,0 +1,248 @@
+---
+title: BibleReader
+description: Full-featured Bible reading experience with navigation, version selection, and customizable settings
+---
+
+The `BibleReader` is a compound component that provides a complete Bible reading experience with chapter navigation, version selection, font customization, and optional user authentication.
+
+## Basic Usage
+
+```tsx
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function MyApp() {
+  return (
+    <div style={{ height: '100vh' }}>
+      <BibleReader.Root defaultVersionId={111}>
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+## Component Structure
+
+BibleReader is a compound component with three parts:
+
+- `BibleReader.Root` - Container that manages state
+- `BibleReader.Content` - Displays the Bible text
+- `BibleReader.Toolbar` - Navigation and settings controls
+
+## Root Props
+
+<ParamField path="book" type="string">
+  Controlled book ID (e.g., "JHN", "GEN").
+</ParamField>
+
+<ParamField path="defaultBook" type="string">
+  Default book ID for uncontrolled mode.
+  
+  Default: `"JHN"`
+</ParamField>
+
+<ParamField path="onBookChange" type="(book: string) => void">
+  Callback when book changes.
+</ParamField>
+
+<ParamField path="chapter" type="string">
+  Controlled chapter ID (e.g., "1", "2").
+</ParamField>
+
+<ParamField path="defaultChapter" type="string">
+  Default chapter ID for uncontrolled mode.
+  
+  Default: `"1"`
+</ParamField>
+
+<ParamField path="onChapterChange" type="(chapter: string) => void">
+  Callback when chapter changes.
+</ParamField>
+
+<ParamField path="versionId" type="number">
+  Controlled version ID.
+</ParamField>
+
+<ParamField path="defaultVersionId" type="number">
+  Default version ID for uncontrolled mode.
+  
+  Default: `3034` (Berean Standard Bible)
+</ParamField>
+
+<ParamField path="onVersionChange" type="(versionId: number) => void">
+  Callback when version changes.
+</ParamField>
+
+<ParamField path="fontFamily" type="FontFamily">
+  Font family for Bible text. Options: "Inter", "Source Serif", or custom font family.
+  
+  Default: `"Source Serif"`
+</ParamField>
+
+<ParamField path="fontSize" type="number">
+  Font size in pixels. Must be between 12 and 20.
+  
+  Default: `16`
+</ParamField>
+
+<ParamField path="lineHeight" type="number">
+  Line height multiplier.
+  
+  Default: `undefined`
+</ParamField>
+
+<ParamField path="showVerseNumbers" type="boolean">
+  Whether to show verse numbers.
+  
+  Default: `true`
+</ParamField>
+
+<ParamField path="background" type="'light' | 'dark'">
+  Theme override.
+  
+  Default: Inherits from provider
+</ParamField>
+
+## Toolbar Props
+
+<ParamField path="border" type="'top' | 'bottom'">
+  Position of the toolbar border.
+  
+  Default: `"top"`
+</ParamField>
+
+## Examples
+
+### Uncontrolled (Default)
+
+The component manages its own state:
+
+```tsx
+<BibleReader.Root defaultVersionId={111}>
+  <BibleReader.Content />
+  <BibleReader.Toolbar />
+</BibleReader.Root>
+```
+
+### Controlled Mode
+
+You manage the state:
+
+```tsx
+import { useState } from 'react';
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function ControlledReader() {
+  const [book, setBook] = useState('GEN');
+  const [chapter, setChapter] = useState('1');
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <BibleReader.Root
+      book={book}
+      onBookChange={setBook}
+      chapter={chapter}
+      onChapterChange={setChapter}
+      versionId={versionId}
+      onVersionChange={setVersionId}
+    >
+      <BibleReader.Content />
+      <BibleReader.Toolbar />
+    </BibleReader.Root>
+  );
+}
+```
+
+### Custom Styling
+
+```tsx
+<BibleReader.Root
+  defaultVersionId={111}
+  fontSize={18}
+  lineHeight={2.0}
+  fontFamily="'Georgia', serif"
+  showVerseNumbers={false}
+>
+  <BibleReader.Toolbar border="bottom" />
+  <BibleReader.Content />
+</BibleReader.Root>
+```
+
+### Dark Theme
+
+```tsx
+<BibleReader.Root
+  defaultVersionId={111}
+  background="dark"
+>
+  <BibleReader.Content />
+  <BibleReader.Toolbar />
+</BibleReader.Root>
+```
+
+### Without Authentication
+
+Set `authEnabled={false}` on the provider to hide the user menu:
+
+```tsx
+<YouVersionProvider
+  apiKey="your-api-key"
+  authEnabled={false}
+>
+  <BibleReader.Root defaultVersionId={111}>
+    <BibleReader.Content />
+    <BibleReader.Toolbar />
+  </BibleReader.Root>
+</YouVersionProvider>
+```
+
+## Features
+
+### Navigation
+
+- Previous/Next chapter buttons
+- Chapter picker with searchable book list
+- Version picker with language filtering
+
+### Reader Settings
+
+- Font size adjustment (12-20px)
+- Font family selection (Inter, Source Serif)
+- Settings persist to localStorage
+
+### User Authentication
+
+When `authEnabled={true}` on the provider:
+- User menu displays avatar or person icon
+- Sign in/out functionality
+- Integrates with YouVersion OAuth
+
+### Responsive Design
+
+- Mobile-friendly layout
+- Touch-optimized controls
+- Scrollable content area
+
+### Accessibility
+
+- Keyboard navigation
+- ARIA labels and roles
+- Screen reader announcements
+- Focus management
+
+## Persistence
+
+User preferences are automatically saved to localStorage:
+
+- Font size: `youversion-platform:reader:font-size`
+- Font family: `youversion-platform:reader:font-family`
+
+Preferences are loaded on mount and persist across sessions.
+
+## Related Components
+
+- [BibleTextView](/api/ui/bible-text-view) - Bible text rendering
+- [BibleChapterPicker](/api/ui/bible-chapter-picker) - Chapter navigation
+- [BibleVersionPicker](/api/ui/bible-version-picker) - Version selection
+- [YouVersionAuthButton](/api/ui/auth-button) - Authentication

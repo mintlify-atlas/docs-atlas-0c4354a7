@@ -1,0 +1,345 @@
+---
+title: Bible Reader
+description: Create a full-featured Bible reading experience with BibleReader
+---
+
+The `BibleReader` is a compound component that provides a complete Bible reading interface with chapter navigation, version selection, settings, and optional authentication.
+
+## Basic Usage
+
+The BibleReader uses a compound component pattern with three main parts:
+
+```tsx
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function BasicReader() {
+  return (
+    <div className="h-screen">
+      <BibleReader.Root
+        defaultVersionId={111}  // NIV
+        defaultBook="JHN"       // John
+        defaultChapter="1"      // Chapter 1
+      >
+        <BibleReader.Content />   {/* Displays the Bible text */}
+        <BibleReader.Toolbar />   {/* Navigation and controls */}
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+## Controlled Component
+
+Control the reader state from your parent component:
+
+```tsx
+import { useState } from 'react';
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function ControlledReader() {
+  const [book, setBook] = useState('JHN');
+  const [chapter, setChapter] = useState('1');
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <div className="h-screen">
+      <BibleReader.Root
+        book={book}
+        onBookChange={setBook}
+        chapter={chapter}
+        onChapterChange={setChapter}
+        versionId={versionId}
+        onVersionChange={setVersionId}
+      >
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+## Customizing Appearance
+
+Control fonts, sizes, and other visual options:
+
+```tsx
+import { BibleReader } from '@youversion/platform-react-ui';
+import { SOURCE_SERIF_FONT, INTER_FONT } from '@youversion/platform-react-ui';
+
+function CustomStyledReader() {
+  return (
+    <div className="h-screen">
+      <BibleReader.Root
+        defaultVersionId={111}
+        fontSize={18}                    // Font size in pixels (12-20)
+        lineHeight={1.8}                 // Line height multiplier
+        fontFamily={SOURCE_SERIF_FONT}   // or INTER_FONT
+        showVerseNumbers={true}          // Show/hide verse numbers
+        background="light"               // "light" | "dark"
+      >
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+## Toolbar Positioning
+
+Place the toolbar at the top or bottom:
+
+<CodeGroup>
+```tsx Toolbar at Bottom
+<BibleReader.Root defaultVersionId={111}>
+  <BibleReader.Content />
+  <BibleReader.Toolbar border="top" />
+</BibleReader.Root>
+```
+
+```tsx Toolbar at Top
+<BibleReader.Root defaultVersionId={111}>
+  <BibleReader.Toolbar border="bottom" />
+  <BibleReader.Content />
+</BibleReader.Root>
+```
+</CodeGroup>
+
+## Theme Support
+
+Supports both light and dark themes:
+
+```tsx
+function ThemedReader() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  return (
+    <div className="h-screen">
+      <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+        Toggle Theme
+      </button>
+
+      <BibleReader.Root
+        defaultVersionId={111}
+        background={theme}
+      >
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+## Persistent Settings
+
+The reader automatically saves user preferences to localStorage:
+
+- Font size adjustments
+- Font family selection (Inter vs Source Serif)
+
+These settings persist across sessions and are automatically loaded when the component mounts.
+
+```tsx
+// Settings are automatically saved - no additional code needed
+function ReaderWithPersistence() {
+  return (
+    <div className="h-screen">
+      <BibleReader.Root defaultVersionId={111}>
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+        {/* User's font preferences automatically saved to localStorage */}
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+## Navigation Features
+
+The toolbar includes:
+
+- **Previous/Next Chapter Buttons**: Navigate sequentially through the Bible
+- **Chapter Picker**: Select any book and chapter
+- **Version Picker**: Switch between Bible versions
+- **Settings Menu**: Adjust font size and family
+- **User Menu**: Sign in/out (when authentication is enabled)
+
+## Working with Authentication
+
+When authentication is enabled in the YouVersionProvider, the reader shows a user menu:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-ui';
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function App() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      includeAuth={true}
+      authRedirectUrl="https://yourapp.com/callback"
+    >
+      <div className="h-screen">
+        <BibleReader.Root defaultVersionId={111}>
+          <BibleReader.Content />
+          <BibleReader.Toolbar />
+          {/* User menu appears in toolbar when auth enabled */}
+        </BibleReader.Root>
+      </div>
+    </YouVersionProvider>
+  );
+}
+```
+
+## Without Authentication
+
+Disable auth to hide the user menu:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-ui';
+import { BibleReader } from '@youversion/platform-react-ui';
+
+function App() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      includeAuth={false}  // No user menu
+    >
+      <div className="h-screen">
+        <BibleReader.Root defaultVersionId={111}>
+          <BibleReader.Content />
+          <BibleReader.Toolbar />
+        </BibleReader.Root>
+      </div>
+    </YouVersionProvider>
+  );
+}
+```
+
+## Handling Unavailable Content
+
+The reader gracefully handles chapters unavailable in certain versions:
+
+```tsx
+function ReaderWithUnavailableChapter() {
+  return (
+    <div className="h-screen">
+      <BibleReader.Root
+        defaultVersionId={4253}  // A version without Acts intro
+        defaultBook="ACT"
+        defaultChapter="INTRO"
+      >
+        <BibleReader.Content />
+        {/* Shows message: "This chapter is not available in this version." */}
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+## Reading Intro Chapters
+
+Some versions include introductory material:
+
+```tsx
+function ReaderWithIntro() {
+  return (
+    <div className="h-screen">
+      <BibleReader.Root
+        defaultVersionId={1849}  // Version with intro chapters
+        defaultBook="JOS"        // Joshua
+        defaultChapter="INTRO"   // Introduction chapter
+      >
+        <BibleReader.Content />
+        <BibleReader.Toolbar />
+      </BibleReader.Root>
+    </div>
+  );
+}
+```
+
+## Complete Example
+
+Full-featured reader with all options:
+
+```tsx
+import { useState } from 'react';
+import { BibleReader } from '@youversion/platform-react-ui';
+import { SOURCE_SERIF_FONT, INTER_FONT } from '@youversion/platform-react-ui';
+
+function FullFeaturedReader() {
+  const [book, setBook] = useState('JHN');
+  const [chapter, setChapter] = useState('1');
+  const [versionId, setVersionId] = useState(111);
+
+  return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Optional header */}
+      <header style={{ padding: '1rem', borderBottom: '1px solid #ccc' }}>
+        <h1>Bible Reader</h1>
+        <p>
+          Currently reading: {book} {chapter} (Version ID: {versionId})
+        </p>
+      </header>
+
+      {/* Reader component */}
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        <BibleReader.Root
+          book={book}
+          onBookChange={setBook}
+          chapter={chapter}
+          onChapterChange={setChapter}
+          versionId={versionId}
+          onVersionChange={setVersionId}
+          fontSize={16}
+          lineHeight={1.6}
+          fontFamily={SOURCE_SERIF_FONT}
+          showVerseNumbers={true}
+          background="light"
+        >
+          <BibleReader.Content />
+          <BibleReader.Toolbar />
+        </BibleReader.Root>
+      </div>
+    </div>
+  );
+}
+
+export default FullFeaturedReader;
+```
+
+## Props Reference
+
+### BibleReader.Root
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `book` | `string` | - | Controlled book (USFM abbreviation) |
+| `defaultBook` | `string` | `'JHN'` | Initial book |
+| `onBookChange` | `(book: string) => void` | - | Book change callback |
+| `chapter` | `string` | - | Controlled chapter |
+| `defaultChapter` | `string` | `'1'` | Initial chapter |
+| `onChapterChange` | `(chapter: string) => void` | - | Chapter change callback |
+| `versionId` | `number` | - | Controlled version ID |
+| `defaultVersionId` | `number` | `206` | Initial version ID |
+| `onVersionChange` | `(versionId: number) => void` | - | Version change callback |
+| `fontSize` | `number` | `16` | Font size (12-20px) |
+| `fontFamily` | `string` | `SOURCE_SERIF_FONT` | Font family |
+| `lineHeight` | `number` | - | Line height multiplier |
+| `showVerseNumbers` | `boolean` | `true` | Show verse numbers |
+| `background` | `'light' \| 'dark'` | Provider theme | Theme override |
+
+### BibleReader.Toolbar
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `border` | `'top' \| 'bottom'` | `'top'` | Border position |
+
+## Related Components
+
+- [Version Picker](/examples/version-picker) - Standalone version selection
+- [Verse Display](/examples/verse-display) - Display specific verses
+- [Custom Hooks](/examples/custom-hooks) - Build custom reading experiences

@@ -1,0 +1,182 @@
+---
+title: 'Core Package Overview'
+description: 'Pure TypeScript API clients for YouVersion Platform with zero React dependencies'
+---
+
+# Core Package Overview
+
+The `@youversion/platform-core` package provides type-safe TypeScript API clients for accessing YouVersion Platform services. It's framework-agnostic with zero React dependencies, making it suitable for server-side, Node.js, or any JavaScript environment.
+
+## Installation
+
+```bash
+pnpm add @youversion/platform-core
+```
+
+Get your App Key at [platform.youversion.com](https://platform.youversion.com/)
+
+## Core Clients
+
+The package provides several specialized clients for different API services:
+
+<CardGroup cols={2}>
+  <Card title="ApiClient" icon="link" href="/api/core/api-client">
+    HTTP client for making authenticated API requests
+  </Card>
+  <Card title="BibleClient" icon="book" href="/api/core/bible-client">
+    Access Bible versions, books, chapters, verses, and passages
+  </Card>
+  <Card title="LanguagesClient" icon="language" href="/api/core/languages-client">
+    Get supported languages and their metadata
+  </Card>
+  <Card title="HighlightsClient" icon="highlighter" href="/api/core/highlights-client">
+    Manage user Bible highlights (requires OAuth)
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+```typescript
+import { ApiClient, BibleClient } from '@youversion/platform-core';
+
+// Initialize the API client
+const apiClient = new ApiClient({
+  appKey: 'YOUR_APP_KEY',
+  apiHost: 'api.youversion.com', // optional
+  timeout: 10000, // optional, defaults to 10000ms
+});
+
+// Create specialized clients
+const bibleClient = new BibleClient(apiClient);
+
+// Fetch Bible versions in English
+const versions = await bibleClient.getVersions('en*');
+console.log(versions.data[0].title);
+
+// Get John 3:16
+const passage = await bibleClient.getPassage(
+  versions.data[0].id,
+  'JHN.3.16'
+);
+console.log(passage.content);
+```
+
+## Architecture
+
+### Schema-First Design
+
+All data types are defined using [Zod](https://zod.dev/) schemas in the `schemas/` directory. This provides:
+
+- Runtime validation of API responses
+- Type safety with automatic TypeScript types
+- Single source of truth for data structures
+
+### Client Hierarchy
+
+```
+ApiClient (HTTP layer)
+   ├── BibleClient (Bible data operations)
+   ├── LanguagesClient (Language data)
+   └── HighlightsClient (User highlights)
+```
+
+All specialized clients receive an `ApiClient` instance in their constructor, allowing them to make authenticated HTTP requests.
+
+## Configuration
+
+<ParamField path="appKey" type="string" required>
+  Your YouVersion Platform App Key obtained from [platform.youversion.com](https://platform.youversion.com/)
+</ParamField>
+
+<ParamField path="apiHost" type="string" default="api.youversion.com">
+  The API host to connect to. Only change this for testing purposes.
+</ParamField>
+
+<ParamField path="timeout" type="number" default={10000}>
+  Request timeout in milliseconds. Requests will abort after this duration.
+</ParamField>
+
+<ParamField path="installationId" type="string" default="web-sdk-default">
+  Unique identifier for this installation. Used for analytics and tracking.
+</ParamField>
+
+## Type Safety
+
+All API responses are validated against Zod schemas and return strongly-typed data:
+
+```typescript
+import type { BibleVersion, BiblePassage, Collection } from '@youversion/platform-core';
+
+// Collection type for paginated responses
+const versions: Collection<BibleVersion> = await bibleClient.getVersions('en*');
+
+// Iterate with full type safety
+versions.data.forEach((version: BibleVersion) => {
+  console.log(version.title, version.language_tag);
+});
+
+// BiblePassage type
+const passage: BiblePassage = await bibleClient.getPassage(1, 'JHN.3.16');
+console.log(passage.reference, passage.content);
+```
+
+## Error Handling
+
+API errors are thrown as standard JavaScript `Error` objects with additional properties:
+
+```typescript
+try {
+  const passage = await bibleClient.getPassage(9999, 'INVALID.1.1');
+} catch (error) {
+  if (error instanceof Error) {
+    console.error(error.message);
+    // Error objects include HTTP status if available
+    const httpError = error as Error & { status?: number; statusText?: string };
+    console.error(`Status: ${httpError.status} ${httpError.statusText}`);
+  }
+}
+```
+
+## Framework Agnostic
+
+This package has zero React dependencies and can be used in:
+
+- ✅ Node.js servers
+- ✅ Next.js API routes
+- ✅ Express/Fastify backends
+- ✅ Browser applications
+- ✅ React Native apps
+- ✅ Any JavaScript environment
+
+<Note>
+  For React applications, consider using [@youversion/platform-react-hooks](/api/hooks/overview) which provides React hooks built on top of this package.
+</Note>
+
+## Authentication
+
+Some endpoints (like highlights) require OAuth authentication. See the [Authentication](/api/core/authentication) guide for implementing PKCE authentication flow.
+
+## Related Packages
+
+<CardGroup cols={2}>
+  <Card title="React Hooks" icon="react" href="/api/hooks/overview">
+    React hooks wrapping these clients with state management
+  </Card>
+  <Card title="React UI" icon="palette" href="/api/ui/overview">
+    Pre-built UI components for React applications
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="BibleClient" icon="book" href="/api/core/bible-client">
+    Learn about Bible data methods
+  </Card>
+  <Card title="Authentication" icon="lock" href="/api/core/authentication">
+    Implement OAuth PKCE flow
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/core/overview">
+    Browse the complete API reference
+  </Card>
+</CardGroup>

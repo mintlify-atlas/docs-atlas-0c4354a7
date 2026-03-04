@@ -1,0 +1,523 @@
+---
+title: 'LanguagesClient'
+description: 'Access supported languages and their metadata from YouVersion Platform'
+---
+
+# LanguagesClient
+
+The `LanguagesClient` class provides methods for fetching language data from the YouVersion Platform API. It returns information about supported languages, including BCP 47 language codes, scripts, country associations, and display names.
+
+## Constructor
+
+```typescript
+import { ApiClient, LanguagesClient } from '@youversion/platform-core';
+
+const apiClient = new ApiClient({ appKey: 'your-app-key' });
+const languagesClient = new LanguagesClient(apiClient);
+```
+
+<ParamField path="client" type="ApiClient" required>
+  An instance of `ApiClient` used to make HTTP requests.
+</ParamField>
+
+## Methods
+
+### getLanguages()
+
+Fetches a collection of languages supported in the YouVersion Platform.
+
+```typescript
+async getLanguages(options?: GetLanguagesOptions): Promise<Collection<Language>>
+```
+
+<ParamField path="options" type="GetLanguagesOptions">
+  Optional query parameters for pagination and filtering.
+  
+  <Expandable title="GetLanguagesOptions properties">
+    <ParamField path="page_size" type="number | '*'">
+      Number of results per page, or `"*"` to return all results.
+      
+      When using `"*"`, you must specify 1-3 fields.
+    </ParamField>
+    
+    <ParamField path="page_token" type="string">
+      Token for fetching the next page of results.
+    </ParamField>
+    
+    <ParamField path="fields" type="Array<keyof Language>">
+      Specific fields to return (e.g., `['id', 'language', 'display_names']`).
+      
+      Required when `page_size` is `"*"`; must specify 1-3 fields.
+    </ParamField>
+    
+    <ParamField path="country" type="string">
+      ISO 3166-1 alpha-2 country code to filter languages by country (e.g., `"US"`, `"GB"`).
+      
+      Automatically converted to uppercase.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="Returns" type="Promise<Collection<Language>>">
+  A collection of Language objects.
+  
+  <Expandable title="Language properties">
+    <ResponseField name="id" type="string">
+      BCP 47 language identifier (e.g., `"en"`, `"sr-Latn"`)
+      
+      Format: language code or language+script code
+    </ResponseField>
+    
+    <ResponseField name="language" type="string">
+      ISO 639 canonical language code (e.g., `"en"`, `"es"`, `"zh"`)
+    </ResponseField>
+    
+    <ResponseField name="script" type="string | null">
+      ISO 15924 script code (e.g., `"Latn"`, `"Cyrl"`, `"Arab"`)
+    </ResponseField>
+    
+    <ResponseField name="script_name" type="string | null">
+      Human-readable script name (e.g., `"Latin"`, `"Cyrillic"`)
+    </ResponseField>
+    
+    <ResponseField name="aliases" type="string[]">
+      Language aliases or alternative names
+    </ResponseField>
+    
+    <ResponseField name="display_names" type="Record<string, string>">
+      Display names for different locales
+      
+      Example: `{ "en": "English", "es": "Inglés" }`
+    </ResponseField>
+    
+    <ResponseField name="scripts" type="string[]">
+      Available scripts for this language (e.g., `["Cyrl", "Latn"]` for Serbian)
+    </ResponseField>
+    
+    <ResponseField name="variants" type="string[]">
+      Language variants (e.g., `["1996", "fonipa"]`)
+    </ResponseField>
+    
+    <ResponseField name="countries" type="string[]">
+      ISO 3166-1 alpha-2 country codes where this language is spoken
+      
+      Example: `["US", "GB", "CA", "AU"]` for English
+    </ResponseField>
+    
+    <ResponseField name="text_direction" type="'ltr' | 'rtl'">
+      Text direction: `"ltr"` (left-to-right) or `"rtl"` (right-to-left)
+    </ResponseField>
+    
+    <ResponseField name="writing_population" type="number">
+      Estimated number of people who can write in this language
+    </ResponseField>
+    
+    <ResponseField name="speaking_population" type="number">
+      Estimated number of people who speak this language
+    </ResponseField>
+    
+    <ResponseField name="default_bible_id" type="number | null">
+      Default Bible version ID for this language (if available)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Examples
+
+<CodeGroup>
+```typescript Basic Usage
+// Get all languages
+const languages = await languagesClient.getLanguages();
+
+console.log(`Found ${languages.data.length} languages`);
+
+languages.data.forEach(lang => {
+  console.log(`${lang.id}: ${lang.display_names?.en || lang.language}`);
+});
+```
+
+```typescript With Pagination
+// Get first page
+const page1 = await languagesClient.getLanguages({
+  page_size: 20
+});
+
+console.log(`Page 1: ${page1.data.length} languages`);
+console.log(`Total: ${page1.total_size}`);
+
+// Get next page if available
+if (page1.next_page_token) {
+  const page2 = await languagesClient.getLanguages({
+    page_size: 20,
+    page_token: page1.next_page_token
+  });
+  
+  console.log(`Page 2: ${page2.data.length} languages`);
+}
+```
+
+```typescript Filter by Country
+// Get languages spoken in the United States
+const usLanguages = await languagesClient.getLanguages({
+  country: 'US'
+});
+
+console.log(`Languages in US: ${usLanguages.data.length}`);
+
+usLanguages.data.forEach(lang => {
+  console.log(`- ${lang.display_names?.en}`);
+});
+```
+
+```typescript Specific Fields Only
+// Fetch only specific fields for better performance
+const languages = await languagesClient.getLanguages({
+  page_size: '*',
+  fields: ['id', 'display_names']
+});
+
+// Returns all languages with only id and display_names
+languages.data.forEach(lang => {
+  console.log(`${lang.id}: ${JSON.stringify(lang.display_names)}`);
+});
+```
+
+```typescript All Languages
+// Fetch all languages at once
+const allLanguages = await languagesClient.getLanguages({
+  page_size: '*',
+  fields: ['id', 'language', 'display_names']
+});
+
+console.log(`Total languages: ${allLanguages.data.length}`);
+```
+</CodeGroup>
+
+---
+
+### getLanguage()
+
+Fetches details about a specific language in the Platform.
+
+```typescript
+async getLanguage(languageId: string): Promise<Language>
+```
+
+<ParamField path="languageId" type="string" required>
+  The BCP 47 language code, optionally including script.
+  
+  Examples:
+  - `"en"` - English
+  - `"es"` - Spanish  
+  - `"sr-Latn"` - Serbian (Latin script)
+  - `"sr-Cyrl"` - Serbian (Cyrillic script)
+  
+  Must match BCP 47 format: `language` or `language-Script`
+</ParamField>
+
+<ResponseField name="Returns" type="Promise<Language>">
+  The requested Language object with full metadata.
+</ResponseField>
+
+#### Examples
+
+<CodeGroup>
+```typescript Get English
+// Get English language details
+const english = await languagesClient.getLanguage('en');
+
+console.log(english.id); // "en"
+console.log(english.display_names?.en); // "English"
+console.log(english.text_direction); // "ltr"
+console.log(english.countries); // ["US", "GB", "CA", ...]
+console.log(english.default_bible_id); // Default English Bible version ID
+```
+
+```typescript Get Language with Script
+// Get Serbian with Latin script
+const serbianLatin = await languagesClient.getLanguage('sr-Latn');
+
+console.log(serbianLatin.id); // "sr-Latn"
+console.log(serbianLatin.language); // "sr"
+console.log(serbianLatin.script); // "Latn"
+console.log(serbianLatin.script_name); // "Latin"
+console.log(serbianLatin.scripts); // ["Cyrl", "Latn"]
+
+// Get Serbian with Cyrillic script
+const serbianCyrillic = await languagesClient.getLanguage('sr-Cyrl');
+console.log(serbianCyrillic.script); // "Cyrl"
+console.log(serbianCyrillic.script_name); // "Cyrillic"
+```
+
+```typescript Check RTL Languages
+// Get Arabic (right-to-left language)
+const arabic = await languagesClient.getLanguage('ar');
+
+if (arabic.text_direction === 'rtl') {
+  console.log('Arabic is a right-to-left language');
+  // Apply RTL styling in your UI
+}
+```
+
+```typescript Get Default Bible
+// Find the default Bible version for a language
+const spanish = await languagesClient.getLanguage('es');
+
+if (spanish.default_bible_id) {
+  console.log(`Default Spanish Bible ID: ${spanish.default_bible_id}`);
+  
+  // Fetch that Bible version
+  const bibleClient = new BibleClient(apiClient);
+  const defaultBible = await bibleClient.getVersion(spanish.default_bible_id);
+  
+  console.log(`Default: ${defaultBible.title}`);
+}
+```
+</CodeGroup>
+
+## Complete Example
+
+```typescript
+import { ApiClient, LanguagesClient, BibleClient } from '@youversion/platform-core';
+
+// Initialize clients
+const apiClient = new ApiClient({
+  appKey: process.env.YOUVERSION_APP_KEY!,
+});
+const languagesClient = new LanguagesClient(apiClient);
+const bibleClient = new BibleClient(apiClient);
+
+// Get all languages with their display names
+const languages = await languagesClient.getLanguages({
+  page_size: '*',
+  fields: ['id', 'display_names', 'default_bible_id', 'text_direction']
+});
+
+console.log(`Total languages: ${languages.data.length}`);
+
+// Group by text direction
+const ltrLanguages = languages.data.filter(l => l.text_direction === 'ltr');
+const rtlLanguages = languages.data.filter(l => l.text_direction === 'rtl');
+
+console.log(`LTR languages: ${ltrLanguages.length}`);
+console.log(`RTL languages: ${rtlLanguages.length}`);
+
+// Get languages with default Bibles
+const withDefaultBible = languages.data.filter(l => l.default_bible_id);
+
+console.log(`\nLanguages with default Bibles: ${withDefaultBible.length}`);
+
+for (const lang of withDefaultBible.slice(0, 5)) {
+  const displayName = lang.display_names?.en || lang.id;
+  
+  if (lang.default_bible_id) {
+    const bible = await bibleClient.getVersion(lang.default_bible_id);
+    console.log(`${displayName}: ${bible.title} (${bible.abbreviation})`);
+  }
+}
+
+// Get detailed info for a specific language
+const korean = await languagesClient.getLanguage('ko');
+
+console.log(`\nKorean Language Details:`);
+console.log(`  ID: ${korean.id}`);
+console.log(`  Display Names:`, korean.display_names);
+console.log(`  Text Direction: ${korean.text_direction}`);
+console.log(`  Countries: ${korean.countries?.join(', ')}`);
+console.log(`  Speaking Population: ${korean.speaking_population?.toLocaleString()}`);
+console.log(`  Writing Population: ${korean.writing_population?.toLocaleString()}`);
+
+if (korean.default_bible_id) {
+  const defaultBible = await bibleClient.getVersion(korean.default_bible_id);
+  console.log(`  Default Bible: ${defaultBible.title}`);
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Cache language data">
+    Language metadata rarely changes, so cache it to reduce API calls:
+    
+    ```typescript
+    let languagesCache: Collection<Language> | null = null;
+    
+    async function getLanguagesCached() {
+      if (!languagesCache) {
+        languagesCache = await languagesClient.getLanguages({
+          page_size: '*',
+          fields: ['id', 'display_names', 'text_direction']
+        });
+      }
+      return languagesCache;
+    }
+    
+    // Use cached data
+    const languages = await getLanguagesCached();
+    ```
+  </Accordion>
+  
+  <Accordion title="Use display_names for localization">
+    Display language names in the user's preferred language:
+    
+    ```typescript
+    const languages = await languagesClient.getLanguages();
+    const userLocale = 'es'; // User's preferred language
+    
+    languages.data.forEach(lang => {
+      const displayName = lang.display_names?.[userLocale] 
+        || lang.display_names?.en 
+        || lang.id;
+      
+      console.log(displayName);
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Handle languages with multiple scripts">
+    Some languages have multiple scripts (e.g., Serbian, Azerbaijani):
+    
+    ```typescript
+    const language = await languagesClient.getLanguage('sr');
+    
+    if (language.scripts && language.scripts.length > 1) {
+      console.log(`${language.id} has multiple scripts:`);
+      
+      for (const script of language.scripts) {
+        const langWithScript = `${language.language}-${script}`;
+        try {
+          const variant = await languagesClient.getLanguage(langWithScript);
+          console.log(`  ${script}: ${variant.script_name}`);
+        } catch (error) {
+          // Script variant might not be available
+        }
+      }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Fetch specific fields for performance">
+    When you don't need all language metadata, specify only required fields:
+    
+    ```typescript
+    // Only need language IDs and display names for a dropdown
+    const languages = await languagesClient.getLanguages({
+      page_size: '*',
+      fields: ['id', 'display_names']
+    });
+    
+    // Much faster and uses less bandwidth
+    ```
+  </Accordion>
+  
+  <Accordion title="Filter by country for relevant languages">
+    Show only languages relevant to the user's region:
+    
+    ```typescript
+    // Detect user's country (from IP, browser, or user preference)
+    const userCountry = 'US';
+    
+    // Get languages for that country
+    const regionalLanguages = await languagesClient.getLanguages({
+      country: userCountry
+    });
+    
+    console.log(`Languages in ${userCountry}:`);
+    regionalLanguages.data.forEach(lang => {
+      console.log(`  - ${lang.display_names?.en}`);
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Build a language selector UI">
+    Use language data to create an internationalized language picker:
+    
+    ```typescript
+    async function buildLanguageSelector(userLocale: string = 'en') {
+      const languages = await languagesClient.getLanguages({
+        page_size: '*',
+        fields: ['id', 'display_names', 'default_bible_id']
+      });
+      
+      // Filter to languages with Bibles
+      const withBibles = languages.data.filter(l => l.default_bible_id);
+      
+      // Sort by display name in user's locale
+      return withBibles
+        .map(lang => ({
+          id: lang.id,
+          name: lang.display_names?.[userLocale] 
+            || lang.display_names?.en 
+            || lang.id,
+          bibleId: lang.default_bible_id
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+    
+    // Use in UI
+    const options = await buildLanguageSelector('es');
+    // Render dropdown with options
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Validation
+
+The client validates all inputs using Zod schemas:
+
+- **Language ID**: Must match BCP 47 format (language or language-script)
+- **Country Code**: Must be 2-character ISO 3166-1 alpha-2 code (auto-converted to uppercase)
+- **page_size**: Must be a positive integer or `"*"`
+- **fields**: When `page_size` is `"*"`, must specify 1-3 fields
+
+```typescript
+try {
+  // ✅ Valid
+  await languagesClient.getLanguage('en');
+  await languagesClient.getLanguage('sr-Latn');
+  
+  // ❌ Invalid - throws error
+  await languagesClient.getLanguage('invalid');
+  await languagesClient.getLanguage('en-US'); // Region not supported, use 'en'
+  
+  // ✅ Valid country code
+  await languagesClient.getLanguages({ country: 'us' }); // Auto-converted to 'US'
+  
+  // ❌ Invalid page_size="*" without proper fields
+  await languagesClient.getLanguages({
+    page_size: '*'
+    // Error: requires 1-3 fields
+  });
+  
+  // ✅ Valid with fields
+  await languagesClient.getLanguages({
+    page_size: '*',
+    fields: ['id', 'display_names']
+  });
+} catch (error) {
+  console.error(error.message);
+}
+```
+
+## Type Definitions
+
+### GetLanguagesOptions
+
+```typescript languages.ts:9
+export type GetLanguagesOptions = {
+  page_size?: number | '*';
+  fields?: (keyof Language)[];
+  page_token?: string;
+  country?: string; // ISO 3166-1 alpha-2 country code
+};
+```
+
+### Language
+
+See the [Language schema](https://github.com/lifechurch/youversion-platform-sdks/blob/main/packages/core/src/schemas/language.ts) for the complete type definition.
+
+## Related
+
+- [ApiClient](/api/core/api-client) - HTTP client used by LanguagesClient
+- [BibleClient](/api/core/bible-client) - Fetch Bible versions for languages
+- [API Reference](/api/core/overview) - Complete API reference

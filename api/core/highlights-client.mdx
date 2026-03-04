@@ -1,0 +1,717 @@
+---
+title: 'HighlightsClient'
+description: 'Manage user Bible highlights with OAuth authentication'
+---
+
+# HighlightsClient
+
+The `HighlightsClient` class provides methods for managing user Bible highlights through the YouVersion Platform API. All endpoints require OAuth authentication with appropriate scopes.
+
+<Warning>
+  All HighlightsClient methods require OAuth authentication. See the [Authentication guide](/api/core/authentication) for implementing the PKCE flow.
+</Warning>
+
+## Constructor
+
+```typescript
+import { ApiClient, HighlightsClient } from '@youversion/platform-core';
+
+const apiClient = new ApiClient({ appKey: 'your-app-key' });
+const highlightsClient = new HighlightsClient(apiClient);
+```
+
+<ParamField path="client" type="ApiClient" required>
+  An instance of `ApiClient` used to make HTTP requests.
+</ParamField>
+
+## Authentication
+
+Highlights endpoints require a valid OAuth access token. You can provide the token in two ways:
+
+1. **Pass as parameter** - Explicitly pass the `lat` (long access token) parameter to each method
+2. **Global configuration** - Set the token in `YouVersionPlatformConfiguration.accessToken`
+
+```typescript
+import { YouVersionPlatformConfiguration } from '@youversion/platform-core';
+
+// Option 1: Set globally (recommended)
+YouVersionPlatformConfiguration.saveAuthData(
+  accessToken,
+  refreshToken,
+  idToken,
+  expiryDate
+);
+
+// Now all methods use the global token
+const highlights = await highlightsClient.getHighlights();
+
+// Option 2: Pass explicitly
+const highlights = await highlightsClient.getHighlights(undefined, accessToken);
+```
+
+## Methods
+
+### getHighlights()
+
+Fetches a collection of highlights for the authenticated user. Returns one color per verse (no ranges).
+
+**Requires OAuth scope:** `read_highlights`
+
+```typescript
+async getHighlights(
+  options?: GetHighlightsOptions,
+  lat?: string
+): Promise<Collection<Highlight>>
+```
+
+<ParamField path="options" type="GetHighlightsOptions">
+  Optional query parameters for filtering highlights.
+  
+  <Expandable title="GetHighlightsOptions properties">
+    <ParamField path="version_id" type="number">
+      Filter highlights by Bible version ID.
+    </ParamField>
+    
+    <ParamField path="passage_id" type="string">
+      Filter highlights by passage ID (e.g., `"JHN.3.16"`, `"MAT.5.1"`).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="lat" type="string">
+  Optional long access token. If not provided, uses token from `YouVersionPlatformConfiguration.accessToken`.
+</ParamField>
+
+<ResponseField name="Returns" type="Promise<Collection<Highlight>>">
+  Collection of user highlights.
+  
+  <Expandable title="Highlight properties">
+    <ResponseField name="version_id" type="number">
+      Bible version identifier
+    </ResponseField>
+    
+    <ResponseField name="passage_id" type="string">
+      Passage identifier (e.g., `"JHN.3.16"`)
+    </ResponseField>
+    
+    <ResponseField name="color" type="string">
+      Hex color code (6 digits, no `#`)
+      
+      Example: `"ffff00"` for yellow
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Examples
+
+<CodeGroup>
+```typescript Get All Highlights
+// Get all highlights for the authenticated user
+const highlights = await highlightsClient.getHighlights();
+
+console.log(`Total highlights: ${highlights.data.length}`);
+
+highlights.data.forEach(highlight => {
+  console.log(
+    `${highlight.passage_id} in version ${highlight.version_id}: #${highlight.color}`
+  );
+});
+```
+
+```typescript Filter by Version
+// Get highlights for a specific Bible version
+const highlights = await highlightsClient.getHighlights({
+  version_id: 111 // NIV
+});
+
+console.log(`NIV highlights: ${highlights.data.length}`);
+```
+
+```typescript Filter by Passage
+// Get highlights for a specific passage
+const highlights = await highlightsClient.getHighlights({
+  passage_id: 'JHN.3.16'
+});
+
+if (highlights.data.length > 0) {
+  const highlight = highlights.data[0];
+  console.log(`John 3:16 is highlighted in #${highlight.color}`);
+} else {
+  console.log('John 3:16 is not highlighted');
+}
+```
+
+```typescript With Explicit Token
+// Pass token explicitly instead of using global config
+const accessToken = 'user-access-token';
+
+const highlights = await highlightsClient.getHighlights(
+  { version_id: 111 },
+  accessToken
+);
+```
+
+```typescript Group by Color
+// Group highlights by color
+const highlights = await highlightsClient.getHighlights();
+
+const byColor = highlights.data.reduce((acc, h) => {
+  if (!acc[h.color]) acc[h.color] = [];
+  acc[h.color].push(h.passage_id);
+  return acc;
+}, {} as Record<string, string[]>);
+
+Object.entries(byColor).forEach(([color, passages]) => {
+  console.log(`Color #${color}: ${passages.length} verses`);
+});
+```
+</CodeGroup>
+
+---
+
+### createHighlight()
+
+Creates or updates a highlight on a passage. Verse ranges may be used in the `passage_id`.
+
+**Requires OAuth scope:** `write_highlights`
+
+```typescript
+async createHighlight(
+  data: CreateHighlight,
+  lat?: string
+): Promise<Highlight>
+```
+
+<ParamField path="data" type="CreateHighlight" required>
+  The highlight data to create or update.
+  
+  <Expandable title="CreateHighlight properties">
+    <ParamField path="version_id" type="number" required>
+      Bible version identifier (must be a positive integer)
+    </ParamField>
+    
+    <ParamField path="passage_id" type="string" required>
+      Passage identifier in USFM format
+      
+      Examples:
+      - Single verse: `"JHN.3.16"`
+      - Verse range: `"JHN.3.1-5"`
+      - Chapter: `"GEN.1"`
+    </ParamField>
+    
+    <ParamField path="color" type="string" required>
+      Hex color code (6 digits, no `#`)
+      
+      Examples: `"ffff00"` (yellow), `"00ff00"` (green), `"ff0000"` (red)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="lat" type="string">
+  Optional long access token. If not provided, uses token from `YouVersionPlatformConfiguration.accessToken`.
+</ParamField>
+
+<ResponseField name="Returns" type="Promise<Highlight>">
+  The created or updated highlight.
+</ResponseField>
+
+#### Examples
+
+<CodeGroup>
+```typescript Create Highlight
+// Highlight John 3:16 in yellow
+const highlight = await highlightsClient.createHighlight({
+  version_id: 111,
+  passage_id: 'JHN.3.16',
+  color: 'ffff00' // Yellow
+});
+
+console.log(`Created highlight: ${highlight.passage_id}`);
+```
+
+```typescript Highlight Range
+// Highlight multiple verses at once
+const highlight = await highlightsClient.createHighlight({
+  version_id: 111,
+  passage_id: 'JHN.3.1-5', // Verses 1-5
+  color: '00ff00' // Green
+});
+
+console.log(`Highlighted ${highlight.passage_id}`);
+```
+
+```typescript Update Highlight
+// Update an existing highlight (change color)
+const updated = await highlightsClient.createHighlight({
+  version_id: 111,
+  passage_id: 'JHN.3.16',
+  color: 'ff0000' // Red (was yellow)
+});
+
+console.log(`Updated to #${updated.color}`);
+```
+
+```typescript Predefined Colors
+// Use predefined color constants
+const COLORS = {
+  YELLOW: 'ffff00',
+  GREEN: '00ff00',
+  BLUE: '0000ff',
+  RED: 'ff0000',
+  ORANGE: 'ffa500',
+  PURPLE: '800080'
+};
+
+await highlightsClient.createHighlight({
+  version_id: 111,
+  passage_id: 'PSA.23.1',
+  color: COLORS.BLUE
+});
+```
+
+```typescript With Explicit Token
+const accessToken = 'user-access-token';
+
+const highlight = await highlightsClient.createHighlight(
+  {
+    version_id: 111,
+    passage_id: 'JHN.3.16',
+    color: 'ffff00'
+  },
+  accessToken
+);
+```
+</CodeGroup>
+
+---
+
+### deleteHighlight()
+
+Clears highlights for a passage. Removes all highlights matching the passage ID and optional version ID.
+
+**Requires OAuth scope:** `write_highlights`
+
+```typescript
+async deleteHighlight(
+  passageId: string,
+  options?: DeleteHighlightOptions,
+  lat?: string
+): Promise<void>
+```
+
+<ParamField path="passageId" type="string" required>
+  The passage identifier (USFM format, e.g., `"MAT.1.1"` or `"MAT.1.1-5"`)
+</ParamField>
+
+<ParamField path="options" type="DeleteHighlightOptions">
+  Optional parameters for deletion.
+  
+  <Expandable title="DeleteHighlightOptions properties">
+    <ParamField path="version_id" type="number">
+      Filter deletion by Bible version ID.
+      
+      If provided, only highlights in this version are deleted.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="lat" type="string">
+  Optional long access token. If not provided, uses token from `YouVersionPlatformConfiguration.accessToken`.
+</ParamField>
+
+<ResponseField name="Returns" type="Promise<void>">
+  Promise that resolves when highlights are deleted (204 No Content response).
+</ResponseField>
+
+#### Examples
+
+<CodeGroup>
+```typescript Delete Highlight
+// Remove highlight from John 3:16
+await highlightsClient.deleteHighlight('JHN.3.16');
+
+console.log('Highlight removed');
+```
+
+```typescript Delete from Specific Version
+// Remove highlight only from NIV
+await highlightsClient.deleteHighlight('JHN.3.16', {
+  version_id: 111 // NIV
+});
+
+// Highlights in other versions remain
+```
+
+```typescript Delete Range
+// Remove highlights from a range of verses
+await highlightsClient.deleteHighlight('JHN.3.1-5', {
+  version_id: 111
+});
+
+console.log('Removed highlights from John 3:1-5');
+```
+
+```typescript With Explicit Token
+const accessToken = 'user-access-token';
+
+await highlightsClient.deleteHighlight(
+  'JHN.3.16',
+  { version_id: 111 },
+  accessToken
+);
+```
+
+```typescript Clear All Highlights for Verse
+// Get all highlights for a verse
+const highlights = await highlightsClient.getHighlights({
+  passage_id: 'JHN.3.16'
+});
+
+// Delete from each version
+for (const highlight of highlights.data) {
+  await highlightsClient.deleteHighlight('JHN.3.16', {
+    version_id: highlight.version_id
+  });
+}
+
+console.log('Cleared all highlights for John 3:16');
+```
+</CodeGroup>
+
+## Complete Example
+
+```typescript
+import {
+  ApiClient,
+  HighlightsClient,
+  BibleClient,
+  YouVersionPlatformConfiguration
+} from '@youversion/platform-core';
+
+// Initialize clients
+const apiClient = new ApiClient({
+  appKey: process.env.YOUVERSION_APP_KEY!,
+});
+const highlightsClient = new HighlightsClient(apiClient);
+const bibleClient = new BibleClient(apiClient);
+
+// Assume user has authenticated via OAuth
+const accessToken = 'user-oauth-access-token';
+YouVersionPlatformConfiguration.saveAuthData(
+  accessToken,
+  'refresh-token',
+  'id-token',
+  new Date(Date.now() + 3600000) // 1 hour from now
+);
+
+// Get user's existing highlights
+const highlights = await highlightsClient.getHighlights({
+  version_id: 111 // NIV
+});
+
+console.log(`User has ${highlights.data.length} highlights in NIV`);
+
+// Highlight a new verse in yellow
+await highlightsClient.createHighlight({
+  version_id: 111,
+  passage_id: 'JHN.3.16',
+  color: 'ffff00'
+});
+
+console.log('Highlighted John 3:16 in yellow');
+
+// Get the passage content with highlight
+const passage = await bibleClient.getPassage(111, 'JHN.3.16');
+console.log(`\n${passage.reference}`);
+console.log(passage.content);
+
+// Update highlight color to green
+await highlightsClient.createHighlight({
+  version_id: 111,
+  passage_id: 'JHN.3.16',
+  color: '00ff00' // Green
+});
+
+console.log('Changed highlight color to green');
+
+// Highlight a range of verses
+await highlightsClient.createHighlight({
+  version_id: 111,
+  passage_id: 'PSA.23.1-6', // Entire Psalm 23
+  color: '0000ff' // Blue
+});
+
+console.log('Highlighted Psalm 23 in blue');
+
+// Get all highlights again
+const updated = await highlightsClient.getHighlights({
+  version_id: 111
+});
+
+console.log(`\nNow user has ${updated.data.length} highlights`);
+
+// Group by color
+const byColor = updated.data.reduce((acc, h) => {
+  if (!acc[h.color]) acc[h.color] = [];
+  acc[h.color].push(h.passage_id);
+  return acc;
+}, {} as Record<string, string[]>);
+
+Object.entries(byColor).forEach(([color, passages]) => {
+  console.log(`\nColor #${color}:`);
+  passages.forEach(p => console.log(`  - ${p}`));
+});
+
+// Remove a highlight
+await highlightsClient.deleteHighlight('JHN.3.16', {
+  version_id: 111
+});
+
+console.log('\nRemoved highlight from John 3:16');
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use global token configuration">
+    Set the access token globally instead of passing it to every method:
+    
+    ```typescript
+    import { YouVersionPlatformConfiguration } from '@youversion/platform-core';
+    
+    // After successful OAuth authentication
+    YouVersionPlatformConfiguration.saveAuthData(
+      accessToken,
+      refreshToken,
+      idToken,
+      expiryDate
+    );
+    
+    // Now all methods work without explicit token
+    const highlights = await highlightsClient.getHighlights();
+    await highlightsClient.createHighlight({ ... });
+    ```
+  </Accordion>
+  
+  <Accordion title="Handle authentication errors">
+    Always handle authentication and authorization errors:
+    
+    ```typescript
+    try {
+      const highlights = await highlightsClient.getHighlights();
+    } catch (error) {
+      if (error instanceof Error) {
+        const httpError = error as Error & { status?: number };
+        
+        if (httpError.status === 401) {
+          console.error('Authentication required');
+          // Redirect to login
+        } else if (httpError.status === 403) {
+          console.error('Insufficient permissions');
+          // Request additional scopes
+        }
+      }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Validate colors before sending">
+    Ensure colors are valid 6-digit hex codes:
+    
+    ```typescript
+    function isValidColor(color: string): boolean {
+      return /^[0-9a-f]{6}$/i.test(color);
+    }
+    
+    function normalizeColor(color: string): string {
+      // Remove # if present
+      color = color.replace(/^#/, '');
+      
+      if (!isValidColor(color)) {
+        throw new Error('Invalid color format');
+      }
+      
+      return color.toLowerCase();
+    }
+    
+    const userColor = '#FFFF00';
+    const normalized = normalizeColor(userColor); // 'ffff00'
+    
+    await highlightsClient.createHighlight({
+      version_id: 111,
+      passage_id: 'JHN.3.16',
+      color: normalized
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Batch highlight operations">
+    When creating multiple highlights, batch them efficiently:
+    
+    ```typescript
+    const versesToHighlight = [
+      'JHN.3.16',
+      'PSA.23.1',
+      'ROM.8.28'
+    ];
+    
+    const color = 'ffff00'; // Yellow
+    
+    // Create all highlights
+    await Promise.all(
+      versesToHighlight.map(passage_id =>
+        highlightsClient.createHighlight({
+          version_id: 111,
+          passage_id,
+          color
+        })
+      )
+    );
+    
+    console.log('Created all highlights');
+    ```
+  </Accordion>
+  
+  <Accordion title="Sync highlights with local storage">
+    Keep a local cache of highlights for offline access:
+    
+    ```typescript
+    async function syncHighlights(versionId: number) {
+      // Fetch from API
+      const highlights = await highlightsClient.getHighlights({
+        version_id: versionId
+      });
+      
+      // Store locally
+      localStorage.setItem(
+        `highlights-${versionId}`,
+        JSON.stringify(highlights.data)
+      );
+      
+      return highlights.data;
+    }
+    
+    async function getHighlightsCached(versionId: number) {
+      // Try local first
+      const cached = localStorage.getItem(`highlights-${versionId}`);
+      
+      if (cached) {
+        return JSON.parse(cached);
+      }
+      
+      // Fetch and cache
+      return await syncHighlights(versionId);
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Provide color presets">
+    Offer users a palette of predefined colors:
+    
+    ```typescript
+    const HIGHLIGHT_COLORS = {
+      yellow: { name: 'Yellow', hex: 'ffff00' },
+      green: { name: 'Green', hex: '00ff00' },
+      blue: { name: 'Blue', hex: '0000ff' },
+      red: { name: 'Red', hex: 'ff0000' },
+      orange: { name: 'Orange', hex: 'ffa500' },
+      purple: { name: 'Purple', hex: '800080' },
+      pink: { name: 'Pink', hex: 'ffc0cb' },
+    };
+    
+    // Use in UI
+    Object.entries(HIGHLIGHT_COLORS).forEach(([key, { name, hex }]) => {
+      // Render color button with style={`background: #${hex}`}
+    });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Validation
+
+The client validates all inputs using Zod schemas:
+
+- **version_id**: Must be a positive integer
+- **passage_id**: Must be a non-empty string
+- **color**: Must be exactly 6 hex characters (without `#`)
+
+```typescript
+try {
+  // ✅ Valid
+  await highlightsClient.createHighlight({
+    version_id: 111,
+    passage_id: 'JHN.3.16',
+    color: 'ffff00'
+  });
+  
+  // ❌ Invalid - throws error
+  await highlightsClient.createHighlight({
+    version_id: -1, // Must be positive
+    passage_id: '', // Must be non-empty
+    color: '#ffff00' // No # allowed
+  });
+  
+  // ❌ Invalid color format
+  await highlightsClient.createHighlight({
+    version_id: 111,
+    passage_id: 'JHN.3.16',
+    color: 'yellow' // Must be hex
+  });
+} catch (error) {
+  console.error(error.message);
+}
+```
+
+## OAuth Scopes
+
+Highlights endpoints require specific OAuth scopes:
+
+- **`read_highlights`** - Required for `getHighlights()`
+- **`write_highlights`** - Required for `createHighlight()` and `deleteHighlight()`
+
+See the [Authentication guide](/api/core/authentication) for implementing OAuth with the correct scopes.
+
+## Type Definitions
+
+### GetHighlightsOptions
+
+```typescript highlights.ts:9
+export type GetHighlightsOptions = {
+  version_id?: number;
+  passage_id?: string;
+};
+```
+
+### DeleteHighlightOptions
+
+```typescript highlights.ts:16
+export type DeleteHighlightOptions = {
+  version_id?: number;
+};
+```
+
+### Highlight
+
+```typescript
+export type Highlight = {
+  version_id: number;
+  passage_id: string;
+  color: string; // 6-digit hex without #
+};
+```
+
+### CreateHighlight
+
+```typescript
+export type CreateHighlight = {
+  version_id: number;
+  passage_id: string;
+  color: string; // 6-digit hex without #
+};
+```
+
+## Related
+
+- [ApiClient](/api/core/api-client) - HTTP client used by HighlightsClient
+- [Authentication](/api/core/authentication) - OAuth PKCE implementation
+- [BibleClient](/api/core/bible-client) - Fetch Bible passages to display with highlights

@@ -1,0 +1,236 @@
+---
+title: React Hooks Overview
+description: Complete reference for the YouVersion Platform React Hooks SDK
+---
+
+The `@youversion/platform-react-hooks` package provides React hooks for seamless integration with the YouVersion Platform API. It offers data fetching hooks, authentication management, and reading session state management.
+
+## Architecture
+
+The hooks package follows a three-layer architecture:
+
+1. **Providers**: Context providers that manage configuration and state
+2. **Data Hooks**: Hooks that fetch and manage Bible data, languages, and highlights
+3. **Utility Hooks**: Helper hooks and functions for common operations
+
+All data fetching hooks use the `useApiData` pattern, which provides:
+- Automatic loading and error states
+- Caching capability
+- Refetch functionality
+- Conditional fetching with the `enabled` option
+
+## Key Features
+
+### Unified Data Fetching Pattern
+
+All data hooks return a consistent interface:
+
+```tsx
+const { data, loading, error, refetch } = useHook(...);
+```
+
+This predictable pattern makes it easy to handle loading states, errors, and data refreshing across your application.
+
+### Provider-Based Configuration
+
+The SDK uses React Context to manage configuration and state:
+
+- **YouVersionProvider**: Core SDK configuration (required for all hooks)
+- **YouVersionAuthProvider**: Authentication state management (lazy-loaded when auth is enabled)
+- **ReaderProvider**: Bible reading session state
+- **VerseSelectionProvider**: Multi-verse selection state
+
+### Type Safety
+
+All hooks are fully typed with TypeScript, providing autocomplete and type checking for:
+- Hook parameters
+- Return values
+- Configuration options
+- API responses
+
+## Installation
+
+```bash
+npm install @youversion/platform-react-hooks
+# or
+pnpm add @youversion/platform-react-hooks
+# or
+yarn add @youversion/platform-react-hooks
+```
+
+## Quick Start
+
+### 1. Setup Provider
+
+Wrap your application with `YouVersionProvider`:
+
+```tsx
+import { YouVersionProvider } from '@youversion/platform-react-hooks';
+
+function App() {
+  return (
+    <YouVersionProvider
+      appKey="your-app-key"
+      theme="light"
+    >
+      <YourApp />
+    </YouVersionProvider>
+  );
+}
+```
+
+### 2. Use Data Hooks
+
+```tsx
+import { useChapter, useVersion } from '@youversion/platform-react-hooks';
+
+function ChapterView() {
+  const { chapter, loading, error } = useChapter(1, 'GEN', 1);
+  const { version } = useVersion(1);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      <h1>{version?.title}</h1>
+      <div>{chapter?.content}</div>
+    </div>
+  );
+}
+```
+
+## Hook Categories
+
+<CardGroup cols={2}>
+  <Card title="Providers" icon="layer-group" href="./providers">
+    Context providers for configuration and state management
+  </Card>
+  <Card title="Data Hooks" icon="book" href="./data-hooks">
+    Hooks for fetching Bible content, versions, and languages
+  </Card>
+  <Card title="Auth Hooks" icon="lock" href="./auth-hooks">
+    Authentication and user management hooks
+  </Card>
+  <Card title="Utility Hooks" icon="wrench" href="./utility-hooks">
+    Helper hooks and utility functions
+  </Card>
+</CardGroup>
+
+## Core Concepts
+
+### Conditional Fetching
+
+All data hooks support conditional fetching via the `enabled` option:
+
+```tsx
+const { version, loading } = useVersion(versionId, {
+  enabled: versionId !== null, // Only fetch when versionId is set
+});
+```
+
+### Manual Refetching
+
+All data hooks provide a `refetch` function to manually trigger data updates:
+
+```tsx
+const { data, refetch } = useVerseOfTheDay(dayOfYear);
+
+// Later, refresh the data
+<button onClick={refetch}>Refresh</button>
+```
+
+### Error Handling
+
+All data hooks expose error states for graceful error handling:
+
+```tsx
+const { data, loading, error } = useChapter(1, 'GEN', 1);
+
+if (error) {
+  return <ErrorMessage>{error.message}</ErrorMessage>;
+}
+```
+
+## Dependencies
+
+The hooks package depends on:
+- `@youversion/platform-core` - Core API clients and types
+- `react` ^19.1.2 - React library
+
+The package delegates all API calls to `@youversion/platform-core` and does not implement raw HTTP requests directly.
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always wrap your app with YouVersionProvider">
+    All hooks require `YouVersionProvider` to be present in the component tree. Wrap your root component with the provider before using any hooks.
+    
+    ```tsx
+    // ✅ Correct
+    <YouVersionProvider appKey="your-key">
+      <App />
+    </YouVersionProvider>
+    
+    // ❌ Wrong - hooks will fail
+    <App /> // No provider
+    ```
+  </Accordion>
+  
+  <Accordion title="Use conditional fetching to optimize performance">
+    Avoid unnecessary API calls by using the `enabled` option:
+    
+    ```tsx
+    // ✅ Good - only fetches when ready
+    const { chapter } = useChapter(versionId, book, chapterNum, {
+      enabled: Boolean(versionId && book && chapterNum),
+    });
+    
+    // ❌ Bad - fetches even with invalid params
+    const { chapter } = useChapter(versionId, book, chapterNum);
+    ```
+  </Accordion>
+  
+  <Accordion title="Handle loading and error states">
+    Always handle loading and error states for better UX:
+    
+    ```tsx
+    const { data, loading, error } = useVersion(1);
+    
+    if (loading) return <Spinner />;
+    if (error) return <ErrorMessage error={error} />;
+    if (!data) return null;
+    
+    return <VersionDisplay version={data} />;
+    ```
+  </Accordion>
+  
+  <Accordion title="Keep hooks UI-agnostic">
+    Hooks should not return JSX or manipulate the DOM directly. They should only manage data and state:
+    
+    ```tsx
+    // ✅ Good - hooks return data
+    const { chapter, loading } = useChapter(1, 'GEN', 1);
+    
+    // ❌ Bad - hooks should not return JSX
+    // (This is not done in the SDK, just an anti-pattern example)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Explore Providers" icon="layer-group" href="./providers">
+    Learn about YouVersionProvider, ReaderProvider, and more
+  </Card>
+  <Card title="Browse Data Hooks" icon="book" href="./data-hooks">
+    Discover hooks for Bible data, versions, and languages
+  </Card>
+  <Card title="Authentication" icon="lock" href="./auth-hooks">
+    Implement user authentication with useYVAuth
+  </Card>
+  <Card title="Utilities" icon="wrench" href="./utility-hooks">
+    Explore helper hooks and utility functions
+  </Card>
+</CardGroup>

@@ -1,0 +1,170 @@
+---
+title: VerseOfTheDay
+description: Display the daily Bible verse in an attractive card format with sharing and attribution
+---
+
+The `VerseOfTheDay` component displays the daily Bible verse in a card format with optional features like a sun icon, share button, and Bible App attribution.
+
+## Basic Usage
+
+```tsx
+import { VerseOfTheDay } from '@youversion/platform-react-ui';
+
+function MyComponent() {
+  return (
+    <VerseOfTheDay versionId={111} />
+  );
+}
+```
+
+## Props
+
+<ParamField path="background" type="'light' | 'dark'">
+  Theme for the card.
+  
+  Default: Inherits from provider
+</ParamField>
+
+<ParamField path="versionId" type="number">
+  Bible version ID to display the verse in.
+  
+  Default: `3034` (Berean Standard Bible)
+</ParamField>
+
+<ParamField path="dayOfYear" type="number">
+  Day of the year (1-366) to display. Useful for testing or displaying a specific day's verse.
+  
+  Default: Current day
+</ParamField>
+
+<ParamField path="showSunIcon" type="boolean">
+  Whether to display the sun icon.
+  
+  Default: `true`
+</ParamField>
+
+<ParamField path="showBibleAppAttribution" type="boolean">
+  Whether to show the YouVersion Bible App logo and attribution.
+  
+  Default: `true`
+</ParamField>
+
+<ParamField path="showShareButton" type="boolean">
+  Whether to show the share button.
+  
+  Default: `true`
+</ParamField>
+
+<ParamField path="size" type="'default' | 'lg'">
+  Size variant of the card. 'lg' increases font size and padding.
+  
+  Default: `"default"`
+</ParamField>
+
+## Examples
+
+### Default
+
+```tsx
+<VerseOfTheDay
+  versionId={111}
+  showSunIcon={true}
+  showShareButton={true}
+  showBibleAppAttribution={true}
+/>
+```
+
+### Large Size
+
+```tsx
+<VerseOfTheDay
+  versionId={111}
+  size="lg"
+/>
+```
+
+### Minimal (No Icons or Attribution)
+
+```tsx
+<VerseOfTheDay
+  versionId={111}
+  showSunIcon={false}
+  showShareButton={false}
+  showBibleAppAttribution={false}
+/>
+```
+
+### Dark Theme
+
+```tsx
+<VerseOfTheDay
+  versionId={111}
+  background="dark"
+/>
+```
+
+### Specific Day
+
+```tsx
+// Display January 1st verse
+<VerseOfTheDay
+  versionId={111}
+  dayOfYear={1}
+/>
+```
+
+### Different Version
+
+```tsx
+// Amplified Bible
+<VerseOfTheDay
+  versionId={1588}
+/>
+```
+
+## Features
+
+### Sharing
+
+When the share button is clicked:
+- Uses native Web Share API if available
+- Falls back to copying text to clipboard
+- Shares verse text with reference and version abbreviation
+
+### Loading States
+
+The component shows "Loading..." while fetching:
+- The verse of the day data
+- The passage content
+- The version information
+
+### Error Handling
+
+Displays "Error loading verse" if:
+- The verse of the day API fails
+- The passage cannot be fetched
+- The version is unavailable
+
+### Responsive Design
+
+- Card width is constrained to `max-w-screen-sm` (640px)
+- Padding and spacing adjust based on `size` prop
+- Text wraps appropriately for narrow viewports
+
+### Accessibility
+
+- Share button has `aria-label="Share"`
+- Icons have appropriate titles
+- Text is readable with sufficient contrast
+
+## Styling
+
+The component uses these key classes:
+- Card background: `yv:bg-card`
+- Text color: `yv:text-foreground` and `yv:text-muted-foreground`
+- Shadow and rounded corners: `yv:shadow yv:rounded-2xl`
+
+## Related Components
+
+- [BibleTextView](/api/ui/bible-text-view) - For custom verse display
+- [BibleCard](/api/ui/bible-card) - For displaying specific passages
