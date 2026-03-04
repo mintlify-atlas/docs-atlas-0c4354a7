@@ -1,0 +1,121 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "YouVersion Platform React SDK",
+  "projectDescription": "A comprehensive React SDK for integrating YouVersion Platform Bible content into web applications",
+  "theme": "palm",
+  "primaryColor": "#94cb04",
+  "lightColor": "#545454",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/architecture",
+              "concepts/authentication",
+              "concepts/theming"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/displaying-bible-text",
+              "guides/fetching-data",
+              "guides/building-a-reader",
+              "guides/user-authentication",
+              "guides/styling-components"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/verse-display",
+              "examples/verse-of-the-day",
+              "examples/bible-reader",
+              "examples/version-picker",
+              "examples/custom-hooks"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core Package",
+            "pages": [
+              "api/core/overview",
+              "api/core/api-client",
+              "api/core/bible-client",
+              "api/core/languages-client",
+              "api/core/highlights-client",
+              "api/core/authentication"
+            ]
+          },
+          {
+            "group": "React Hooks",
+            "pages": [
+              "api/hooks/overview",
+              "api/hooks/providers",
+              "api/hooks/data-hooks",
+              "api/hooks/auth-hooks",
+              "api/hooks/utility-hooks"
+            ]
+          },
+          {
+            "group": "UI Components",
+            "pages": [
+              "api/ui/overview",
+              "api/ui/bible-text-view",
+              "api/ui/bible-reader",
+              "api/ui/verse-of-the-day",
+              "api/ui/bible-version-picker",
+              "api/ui/bible-chapter-picker",
+              "api/ui/bible-card",
+              "api/ui/auth-button"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Type-safe API clients for YouVersion Platform",
+    "React hooks for Bible data fetching and state management",
+    "Pre-built UI components for Bible readers, verses, and navigation",
+    "OAuth 2.0 PKCE authentication flow",
+    "Multi-version Bible support with language filtering",
+    "Customizable theming and styling"
+  ],
+  "publicApiSurface": [
+    "ApiClient",
+    "BibleClient",
+    "LanguagesClient",
+    "HighlightsClient",
+    "SignInWithYouVersionPKCE",
+    "YouVersionProvider",
+    "usePassage",
+    "useChapter",
+    "useVersion",
+    "useVOTD",
+    "useYVAuth",
+    "BibleTextView",
+    "BibleReader",
+    "VerseOfTheDay",
+    "BibleVersionPicker",
+    "BibleChapterPicker",
+    "BibleCard",
+    "YouVersionAuthButton"
+  ]
+}
