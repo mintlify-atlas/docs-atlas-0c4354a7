@@ -137,6 +137,59 @@ try {
 }
 ```
 
+## Utility Functions
+
+### getAdjacentChapter
+
+Computes the next or previous chapter across book boundaries, with support for intro chapters.
+
+```typescript
+import { getAdjacentChapter } from '@youversion/platform-core';
+
+// Get next chapter
+const next = getAdjacentChapter(
+  books,           // Array of BibleBook with populated chapters
+  'JHN',           // Current book USFM ID
+  '3',             // Current chapter ID
+  'next'           // Direction: 'next' | 'previous'
+);
+
+if (next) {
+  console.log(`Next: ${next.bookId} ${next.chapterId}`);
+  // Navigate to next.bookId and next.chapterId
+}
+
+// Get previous chapter
+const prev = getAdjacentChapter(books, 'JHN', '3', 'previous');
+```
+
+<ParamField path="books" type="BibleBook[]" required>
+  Ordered array of Bible books with populated chapters
+</ParamField>
+
+<ParamField path="currentBookId" type="string" required>
+  USFM book ID (e.g., "JHN", "GEN", "REV")
+</ParamField>
+
+<ParamField path="currentChapterId" type="string" required>
+  Chapter ID string (e.g., "1", "2", "INTRO")
+</ParamField>
+
+<ParamField path="direction" type="'next' | 'previous'" required>
+  Navigation direction
+</ParamField>
+
+**Returns:** `{ bookId: string; chapterId: string } | null`
+
+Returns the target book and chapter IDs, or `null` if at Bible boundaries (beginning or end).
+
+**Features:**
+- Handles intro chapters correctly (skips when navigating forward)
+- Crosses book boundaries automatically
+- Returns `null` at Bible boundaries instead of wrapping
+
+---
+
 ## Framework Agnostic
 
 This package has zero React dependencies and can be used in:

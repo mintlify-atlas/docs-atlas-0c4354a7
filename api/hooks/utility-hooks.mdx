@@ -185,6 +185,76 @@ function VersionPicker() {
 
 ---
 
+### useInitData
+
+Combines version, book, and chapter data into a single hook for initialization. Useful when you need all three pieces of data loaded together.
+
+<ParamField path="version" type="number" default="3034">
+  Bible version ID
+</ParamField>
+
+<ParamField path="book" type="string" default="GEN">
+  USFM book abbreviation
+</ParamField>
+
+<ParamField path="chapter" type="number" default="1">
+  Chapter number
+</ParamField>
+
+#### Returns
+
+<ResponseField name="loading" type="boolean">
+  True if any of version, book, or chapter data is loading
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Combined error messages from version, book, and chapter requests
+</ResponseField>
+
+<ResponseField name="data" type="InitData | null">
+  Object containing version, book, and chapter data when all are loaded
+  
+  <Expandable title="InitData properties">
+    <ResponseField name="version" type="BibleVersion">
+      Version metadata
+    </ResponseField>
+    <ResponseField name="book" type="BibleBook">
+      Book metadata with chapters
+    </ResponseField>
+    <ResponseField name="chapter" type="BibleChapter">
+      Chapter content
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Usage
+
+```tsx
+import { useInitData } from '@youversion/platform-react-hooks';
+
+function BibleReaderInit() {
+  const { data, loading, error } = useInitData({
+    version: 3034,
+    book: 'JHN',
+    chapter: 3,
+  });
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!data) return null;
+
+  return (
+    <div>
+      <h1>{data.version.title}</h1>
+      <h2>{data.book.name} {data.chapter.number}</h2>
+      <div dangerouslySetInnerHTML={{ __html: data.chapter.content }} />
+    </div>
+  );
+}
+```
+
+---
+
 ### useChapterNavigation
 
 Provides navigation functionality for moving between chapters, including support for book boundaries and intro chapters.
